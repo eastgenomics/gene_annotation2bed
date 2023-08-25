@@ -1,0 +1,12 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+#!genome-build GRCh37.p13
+#!genome-build-accession NCBI_Assembly:GCF_000001405.25
+#!annotation-date 03/07/2022
+#!annotation-source NCBI Homo sapiens Updated Annotation Release 105.20220307
+##sequence-region NC_000001.10 1 249250621
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+NC_000001.10	BestRefSeq	pseudogene	14362	29370	.	-	.	ID=gene-WASH7P;Dbxref=GeneID:653635,HGNC:HGNC:38034;Name=WASH7P;description=WASP family homolog 7%2C pseudogene;gbkey=Gene;gene=WASH7P;gene_biotype=transcribed_pseudogene;gene_synonym=FAM39F,WASH5P;pseudo=true
+NC_000001.10	BestRefSeq	transcript	14362	29370	.	-	.	ID=rna-NR_024540.1;Parent=gene-WASH7P;Dbxref=GeneID:653635,Genbank:NR_024540.1,HGNC:HGNC:38034;Name=NR_024540.1;gbkey=misc_RNA;gene=WASH7P;product=WASP family homolog 7%2C pseudogene;pseudo=true;transcript_id=NR_024540.1
+NC_000001.10	BestRefSeq	exon	29321	29370	.	-	.	ID=exon-NR_024540.1-1;Parent=rna-NR_024540.1;Dbxref=GeneID:653635,Genbank:NR_024540.1,HGNC:HGNC:38034;gbkey=misc_RNA;gene=WASH7P;product=WASP family homolog 7%2C pseudogene;pseudo=true;transcript_id=NR_024540.1
