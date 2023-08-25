@@ -70,11 +70,12 @@ class Gff3DataFrame(object):
         The header of the gff file is read, means all lines,
         which start with '#'."""
         self.header = ""
-        for line in open(self._gff_file):
-            if line.startswith("#"):
-                self.header += line
-            else:
-                break
+        with open(self._gff_file) as file:
+            for line in file:
+                if line.startswith("#"):
+                    self.header += line
+                else:
+                    break
         return self.header
 
 
