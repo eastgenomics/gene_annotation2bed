@@ -76,8 +76,6 @@ def parse_gff(gff_file):
     # Filter GFF DataFrame to select entries with 'NM' type
     transcripts_df = gff_df[gff_df['transcript_id'].str.startswith('NM_')]
     # transcripts_df = transcripts_df.reset_index(drop=True)
-    print(transcripts_df.head())
-    print(transcripts_df.memory_usage(deep=True).sum() / 1024 / 1024)
     return transcripts_df
 
 
@@ -136,6 +134,10 @@ def extract_hgnc_id(dbxref_str):
     for part in parts:
         if 'HGNC:' in part:
             return int(part.split(':')[-1])
+        elif 'hgnc:' in part:
+            return int(part.split(':')[-1])
+        elif 'HGNC_' in part:
+            return int(part.split('_')[-1])
     return None
 
 
@@ -169,11 +171,40 @@ def read_assembly_mapping(assembly_file):
 def map_accession_to_chromosome(accession, accession_to_chromosome):
     """
     Simple mapping function to find chromosome for a given refseq accession.
+    Calls the accession_to_chromosome dictionary and extracts the chromosome.
+
+    Parameters
+    ----------
+    accession: str
+    str of the refseq accession
+
+    accession_to_chromosome: dictionary
+    dictionary mapping of refseq accession to chromosome
+
+    Returns
+    -------
+    str value for the corresponding chromosome for the accession key.
+    Or if not present in the dictionary, returns "Unknown - {accession}"
     """
     return accession_to_chromosome.get(accession, f"Unknown - {accession}")
 
 
 def parse_pickle(pickle_file):
+    """
+    Parses a pickle file and returns a DataFrame of transcripts.
+
+    Parameters
+    ----------
+    pickle_file : pkl
+        pickle file of a GFF DataFrame once parsed
+        with columns from attributes_to_columns
+
+    Returns
+    -------
+    transcripts_df: dataframe
+        dataframe of transcripts with columns for attributes.
+        Contains only transcripts with NM_ prefix.
+    """
     gff_df = pd.read_pickle(f"./{pickle_file}")
     transcripts_df = gff_df[gff_df['transcript_id'].fillna('').str.startswith('NM_')]
     return transcripts_df
@@ -181,47 +212,58 @@ def parse_pickle(pickle_file):
 
 def merge_overlapping(bed_df):
     """
-    Function to merge overlapping regions in a bed file.
+    Function to merge overlapping regions in a bed file by annotation.
 
     Parameters
     ----------
-    bed_df : _type_
-        bed file with columns: chromosome, start, end
+    bed_df : dataframe
+        bed file with columns: seq_id, start_flank,
+            end_flank, hgnc_id, annotation, gene, chromosome
 
     Returns
     -------
-    _type_
-        _description_
+    merged_df: dataframe
+        dataframe of merged rows with columns: chromosome, start, end, annotation
     """
-    bed_df = bed_df.sort_values(by=["chromosome", "start_flank", "end_flank"])  # Sort by chromosome, start, and end
+    # Sort by chromosome, start, and end
+    # This makes sure that overlapping regions are next to each other.
+
+    bed_df = bed_df.sort_values(by=["annotation", "chromosome", "start_flank", "end_flank"])
+    # Sort by first annotation then chromosome, start, and end.
     merged_rows = []
 
     current_row = bed_df.iloc[0]
     for _, row in bed_df.iterrows():
+        if row['annotation'] != current_row['annotation']:
+            merged_rows.append(current_row) # Append the merged row
+            current_row = row # Start a new potential merged row
+            # Only rows with same annotation are merged
         if row["chromosome"] != current_row["chromosome"]:
             merged_rows.append(current_row)
             current_row = row
+            # Only rows with same chromosome are merged.
         if row["start_flank"] <= current_row["end_flank"]:
-            current_row["end_flank"] = max(current_row["end_flank"], row["end_flank"])  # Extend the end if overlapping
+            current_row["end_flank"] = max(current_row["end_flank"], row["end_flank"])
+            # Extend the end if overlapping
         else:
-            merged_rows.append(current_row)  # Append the merged row
-            current_row = row  # Start a new potential merged row
+            merged_rows.append(current_row)
+            current_row = row
 
     merged_rows.append(current_row)  # Append the last merged row
-
-    return pd.DataFrame(merged_rows)
+    merged_df = pd.DataFrame(merged_rows)
+    return merged_df
 
 
 def config_igv_report(args):
     # assign vars.
     bed_file = f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
-    genome = args.reference_genome #"hg38"
-    info_columns = [] #["TCGA", "GTEx", "variant_name"]
-    title = f"TEST{args.output_file_suffix}" #Sample A
-    output = "example_igv_report.html"
+    genome = args.reference_genome
+    info_columns = []
+    title = f"{args.output_file_suffix}_report"
+    output_file = f"{title}.html"
     print("Creating IGV report...")
-    print(f"Bed file: {bed_file}, Genome: {genome}, Info columns: {info_columns}, Title: {title}, Output: {output}")
-    igv.create_igv_report(bed_file, genome, info_columns, title, output)
+    print(f"Bed file: {bed_file}, Genome: {genome}, Info columns: {info_columns}, Title: {title}, Output: {output_file}")
+    igv.create_igv_report(bed_file, genome, info_columns, title, output_file)
     return "IGV report created successfully!"
 
 
@@ -246,6 +288,7 @@ def main():
     parser.add_argument('-ref', "--reference_genome", help="Reference genome (GrCh37/38)", required=True)
     parser.add_argument('-f', "--flanking", type=int, help="Flanking size", required=True)
     parser.add_argument('--assembly_summary', help="Path to assembly summary file", required=True)
+    # parser.add_argument('--report_name', help="Name for report")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
