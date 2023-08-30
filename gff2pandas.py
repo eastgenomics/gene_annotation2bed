@@ -1,3 +1,27 @@
+"""
+    This is a module taken from:
+    https://github.com/foerstner-lab/gffpandas/releases/tag/v1.2.2
+    Version: v1.2.2
+
+    The module contains a class Gff3DataFrame, which is used to read a gff3 file.
+    The main function used is converting the attributes column into
+    separate columns for a pandas dataframe.
+
+    Changes made:
+    Line 64: dtype of start and end changed to np.uint32
+        dtype={
+        "seq_id": str,
+        "source": "category",
+        "type": "category",
+        "start": np.uint32,
+        "end": np.uint32,
+        "score": str,
+        "strand": str,
+        "phase": str,
+        "attributes": str,
+        }
+"""
+
 import itertools
 import pandas as pd
 import numpy as np
@@ -12,10 +36,10 @@ def _split_atts(atts):
 
 
 class Gff3DataFrame(object):
-    """This class contains header information in the header attribute and
+    """
+    This class contains header information in the header attribute and
     a actual annotation data in the pandas dataframe in the df
     attribute.
-
     """
 
     def __init__(
@@ -65,7 +89,8 @@ class Gff3DataFrame(object):
         return self.df
 
     def _read_gff_header(self) -> str:
-        """Create a header.
+        """
+        Create a header string.
 
         The header of the gff file is read, means all lines,
         which start with '#'."""
@@ -75,7 +100,7 @@ class Gff3DataFrame(object):
                 if line.startswith("#"):
                     self.header += line
                 else:
-                    break
+                    break  # If no '#' is found, the header is finished.
         return self.header
 
 
