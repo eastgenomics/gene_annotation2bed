@@ -1,8 +1,13 @@
+import pandas as pd
+import unittest
 import sys
 sys.path.append('../gene_annotation2bed')
-import unittest
 import gff2pandas
-import pandas as pd
+from io import StringIO
+
+pd.set_option('display.max_rows', 50)
+pd.set_option('display.max_columns', 60)
+pd.set_option('display.width', 150)
 
 class Test_parsing_gff(unittest.TestCase):
     def setUp(self):
@@ -27,9 +32,12 @@ class Test_parsing_gff(unittest.TestCase):
             "phase",
             "attributes",
         ])
-        self.assertEqual(self.gff_df["seq_id"].tolist(), ["NC_000001.10", "NC_000001.10", "NC_000001.10"])
-        self.assertEqual(self.gff_df["source"].tolist(), ["BestRefSeq", "BestRefSeq", "BestRefSeq"])
-        self.assertEqual(self.gff_df["type"].tolist(), ["pseudogene", "transcript", "exon"])
+        self.assertEqual(self.gff_df["seq_id"].tolist(), [
+                         "NC_000001.10", "NC_000001.10", "NC_000001.10"])
+        self.assertEqual(self.gff_df["source"].tolist(), [
+                         "BestRefSeq", "BestRefSeq", "BestRefSeq"])
+        self.assertEqual(self.gff_df["type"].tolist(), [
+                         "pseudogene", "transcript", "exon"])
         self.assertEqual(self.gff_df["start"].tolist(), [14362, 14362, 29321])
         self.assertEqual(self.gff_df["end"].tolist(), [29370, 29370, 29370])
         self.assertEqual(self.gff_df["score"].tolist(), [".", ".", "."])
@@ -46,7 +54,9 @@ class Test_parsing_gff(unittest.TestCase):
         test the gff attributes column to pandas cols.
         """
         self.assertIsInstance(self.gff_new_df, pd.DataFrame)
-        print(self.gff_new_df)
+        # Add further test here to check it
+        # splits the attributes column into correctly.
+
 
 if __name__ == "__main__":
     unittest.main()
