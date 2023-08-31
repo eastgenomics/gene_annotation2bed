@@ -26,11 +26,7 @@ def parse_gff(gff_file):
     """
     transcripts_gff = gffpd.read_gff3(gff_file)
     info = transcripts_gff.stats_dic()
-    print(info)
     gff_df = transcripts_gff.attributes_to_columns()
-    print(gff_df.head())
-    print(gff_df.columns)
-    print(gff_df.memory_usage(deep=True).sum() / 1024 / 1024)
     # drop columns that are not needed to reduce memory footprint
     gff_df = gff_df.drop(['Gap', 'Is_circular', 'Name', 'Note', 'Parent',
                           'Target', 'anticodon', 'assembly_bases_aln',
@@ -255,8 +251,23 @@ def merge_overlapping(bed_df):
 
 
 def config_igv_report(args):
+    """
+    Function to call igv report script with the correct parameters.
+    Generates an IGV html report using generic handling.
+
+    Parameters
+    ----------
+    args : argeparse object
+        argeparse object with the following attributes:
+        reference_genome, output_file_suffix, gff_file/pickle_file,
+        annotation_file/transcript_file, assembly_file, and flanking.
+
+    Returns
+    -------
+    None
+    """
     # assign vars.
-    bed_file = f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
+    bed_file = f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
     genome = args.reference_genome
     info_columns = []
     title = f"{args.output_file_suffix}_report"
@@ -303,7 +314,6 @@ def main():
     # Read the annotation file into a pandas DataFrame
     if args.annotation_file is not None:
         annotation_df = pd.read_csv(args.annotation_file, sep="\t")
-        print(annotation_df.dtypes)
     # Read the transcript annotation file
     elif args.transcript_file is not None:
         annotation_df = pd.read_csv(args.transcript_file, sep="\t")
@@ -315,7 +325,6 @@ def main():
     #merged_df = pd.concat([transcripts_df, annotation_df], axis=1, join="inner")
     merged_df = transcripts_df.merge(annotation_df, left_on="hgnc_id",
                                      right_on="hgnc_id", how="inner")
-    print(merged_df.head())
     # Create BED file with flanking regions
     print("Creating BED file")
     print("Adding flanking regions")
@@ -334,7 +343,7 @@ def main():
     collapsed_df = merge_overlapping(bed_df)
     print(f"Summary of BED file df after collapsing \n {collapsed_df.head()}")
     # Reorder the columns to match the BED format
-    cols = ['chromosome', 'start_flank', 'end_flank', 'annotation']
+    cols = ['chromosome', 'start_flank', 'end_flank', 'annotation', 'gene']
     collapsed_df = collapsed_df[cols]
     # Rename columns
     new_column_names = {
@@ -345,8 +354,7 @@ def main():
 
     # Write the collapsed data to an output file
     output_file_name = f"output_{args.reference_genome}" \
-                       f"_{args.output_file_suffix}.bed"
-    print(collapsed_df.head())
+                       f"_{args.output_file_suffix}.maf"
     collapsed_df.to_csv(output_file_name, sep="\t",
                         header=False, index=False)
 
