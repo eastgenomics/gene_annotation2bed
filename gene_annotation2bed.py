@@ -21,6 +21,17 @@ import igv_report as igv
 def parse_gff(gff_file):
     """
     Summary: Import GFF3 file and convert to pandas DataFrame.
+
+    Parameters
+    ----------
+        gff_file : gff2pandas object
+            GFF object which contains the df and header.
+
+    Returns
+    -------
+    transcripts_df : pandas DataFrame
+        DataFrame containing the all the 'NM_' prefixed
+        transcripts from the GFF3 file.
     """
     transcripts_gff = gffpd.read_gff3(gff_file)
     info = transcripts_gff.stats_dic()
@@ -65,46 +76,11 @@ def parse_gff(gff_file):
     }
 
     gff_df = gff_df.astype(dtype_mapping)
-    print(gff_df.dtypes)
 
     # Filter GFF DataFrame to select entries with 'NM' type
     transcripts_df = gff_df[gff_df['transcript_id'].str.startswith('NM_')]
-    # transcripts_df = transcripts_df.reset_index(drop=True)
+
     return transcripts_df
-
-
-def attributes_to_columns(attribute_df) -> pd.DataFrame:
-    """Saving each attribute-tag to a single column.
-    Attribute column will be split by the tags in the single columns.
-    For this method only a pandas DataFrame and not a Gff3DataFrame
-    will be returned. Therefore, this data frame can not be saved as
-    gff3 file.
-    :return: pandas dataframe, whereby the attribute column of the gff3
-            file are splitted into the different attribute tags
-    :rtype: pandas DataFrame
-    """
-    df_attributes = attribute_df.loc[:, "seqid":"attributes"]
-    attribute_df["attr_dic"] = attribute_df.attributes.apply(
-        lambda attributes: dict(
-            [
-                key_value_pair.split(sep="=", maxsplit=1)
-                for key_value_pair in attributes.split(";")
-            ]
-        )
-    )
-    attribute_df["attr_dic_keys"] = attribute_df["attr_dic"].apply(
-        lambda attr_dic: list(attr_dic.keys())
-    )
-    merged_attribute_list = list(
-        itertools.chain.from_iterable(attribute_df["attr_dic_keys"])
-    )
-    nonredundant_list = sorted(list(set(merged_attribute_list)))
-    for atr in nonredundant_list:
-        df_attributes[atr] = attribute_df["attr_dic"].apply(
-            lambda attr_dic: attr_dic.get(atr)
-        )
-    df_attributes.drop(columns=["attributes"], inplace=True)
-    return df_attributes
 
 
 # Function to extract HGNC ID
@@ -313,7 +289,6 @@ def main():
 
     # Merge NM entries with matching HGNC IDs
     print("Merging annotation and gff dataframes")
-    #merged_df = pd.concat([transcripts_df, annotation_df], axis=1, join="inner")
     merged_df = transcripts_df.merge(annotation_df, left_on="hgnc_id",
                                      right_on="hgnc_id", how="inner")
     # Create BED file with flanking regions
