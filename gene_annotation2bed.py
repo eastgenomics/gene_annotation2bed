@@ -4,7 +4,7 @@ producing a BED file for annotation of relevant transcripts.
 Example cmd:
 /home/rswilson1/anaconda3/envs/Annotation_app/bin/python
 /home/rswilson1/Documents/Programming_project/gene_annotation2bed.py -gff "GCF_000001405.25_GRCh37.p13_genomic.gff"
--ig cancerGeneList_test.tsv -ref "Grch37" -f 5
+-ig cancerGeneList_test.tsv -ref "hg19" -f 5
 --assembly_summary "GCF_000001405.25_GRCh37.p13_assembly_report.txt"
 -o "test6"
 """
