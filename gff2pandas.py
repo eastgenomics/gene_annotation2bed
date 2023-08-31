@@ -20,6 +20,9 @@
         "phase": str,
         "attributes": str,
         }
+
+    TODO: Convert to package.
+
 """
 
 import itertools
