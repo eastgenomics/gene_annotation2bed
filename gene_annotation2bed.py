@@ -14,8 +14,6 @@ import argcomplete
 import pandas as pd
 import numpy as np
 import itertools
-# import pybedtools # collapsed = bed_file.merge(c=4, o='collapse') or bed_file.merge(c=4, o='distinct')
-#import gffpandas.gffpandas as gffpd
 pd.options.mode.chained_assignment = None  # default='warn'
 import gff2pandas as gffpd
 import igv_report as igv
@@ -276,13 +274,6 @@ def config_igv_report(args):
     print(f"Bed file: {bed_file}, Genome: {genome}, Info columns: {info_columns}, Title: {title}, Output: {output_file}")
     igv.create_igv_report(bed_file, genome, info_columns, title, output_file)
     return "IGV report created successfully!"
-
-
-def line_prepender(filename, line):
-    with open(filename, 'r+') as f:
-        content = f.read()
-        f.seek(0, 0)
-        f.write(line.rstrip('\r\n') + '\n' + content)
 
 
 def main():
