@@ -13,10 +13,41 @@ import argparse
 import argcomplete
 import pandas as pd
 import numpy as np
-import itertools
-pd.options.mode.chained_assignment = None  # default='warn'
-import gff2pandas as gffpd
 import igv_report as igv
+import re
+
+import gff2pandas as gffpd
+
+pd.options.mode.chained_assignment = None  # default='warn'
+
+
+def parse_args() -> argparse.Namespace:
+    """
+    Parse command line arguments
+
+    Returns
+    -------
+    args : Namespace
+        Namespace of passed command line argument inputs
+    """
+    parser = argparse.ArgumentParser(description="GFF Processing Script")
+    group1 = parser.add_mutually_exclusive_group(required=True)
+    group1.add_argument('-gff', "--gff_file", help="Path to GFF file")
+    group1.add_argument('-pkl', "--pickle", help="Import gff as pickle file")
+
+    group2 = parser.add_mutually_exclusive_group(required=True)
+    group2.add_argument('-ig', "--annotation_file", help="Path to the annotation file (TSV)")
+    group2.add_argument('-it', "--transcript_file", help="Path to transcript annotation file")
+
+    parser.add_argument('-o', "--output_file_suffix", help="Output file suffix", required=True)
+    parser.add_argument('-ref', "--reference_genome", help="Reference genome (GrCh37/38)", required=True)
+    parser.add_argument('-f', "--flanking", type=int, help="Flanking size", required=True)
+    parser.add_argument('--assembly_summary', help="Path to assembly summary file", required=True)
+    # parser.add_argument('--report_name', help="Name for report")
+    argcomplete.autocomplete(parser)
+    args = parser.parse_args()
+    return args
+
 
 def parse_gff(gff_file):
     """
@@ -95,19 +126,16 @@ def extract_hgnc_id(dbxref_str):
 
     Returns
     -------
-    int
+    int | None
         HGNC ID as an integer i.e. 427 for HGNC:427.
+        Returns None if no HGNC ID found.
     """
-    if dbxref_str is None:
+    if not dbxref_str:
         return None
     parts = dbxref_str.split(',')
     for part in parts:
-        if 'HGNC:' in part:
-            return int(part.split(':')[-1])
-        elif 'hgnc:' in part:
-            return int(part.split(':')[-1])
-        elif 'HGNC_' in part:
-            return int(part.split('_')[-1])
+        if re.search(r'hgnc[:_][0-9]+', part, re.IGNORECASE):
+            return int(part.replace('_', ':').split(':')[-1])
     return None
 
 
@@ -129,12 +157,10 @@ def read_assembly_mapping(assembly_file):
     accession_to_chromosome = {}
     assembly_df = pd.read_csv(assembly_file, sep='\t', comment='#', header=None)
     assembly_df = assembly_df.dropna()  # Drop rows with missing values
-    for _, row in assembly_df.iterrows():
-        chromosome = row[2]
-        accession = row[6]
-        if chromosome.startswith('na'):
-            continue
-        accession_to_chromosome[accession] = chromosome
+    # filter out na from chromosome column and turn accession and chromosome columns to dict
+    assembly_df = assembly_df[~assembly_df[2].str.startswith('na')]
+    accession_to_chromosome = dict(zip(assembly_df[6], assembly_df[2]))
+
     return accession_to_chromosome
 
 
@@ -175,7 +201,7 @@ def parse_pickle(pickle_file):
         dataframe of transcripts with columns for attributes.
         Contains only transcripts with NM_ prefix.
     """
-    gff_df = pd.read_pickle(f"./{pickle_file}")
+    gff_df = pd.read_pickle(pickle_file)
     transcripts_df = gff_df[gff_df['transcript_id'].fillna('').str.startswith('NM_')]
     return transcripts_df
 
@@ -248,30 +274,19 @@ def config_igv_report(args):
     output_file = f"{title}.html"
     print("Creating IGV report...")
     print(f"Bed file: {bed_file}, Genome: {genome}, Info columns: {info_columns}, Title: {title}, Output: {output_file}")
+    print(
+        f"Bed file: {bed_file}\nGenome: {genome}\n"
+        f"Info columns: {info_columns}\nTitle: {title}\nOutput: {output_file}"
+    )
     igv.create_igv_report(bed_file, genome, info_columns, title, output_file)
-    return "IGV report created successfully!"
+    print("IGV report created successfully!")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="GFF Processing Script")
-    group1 = parser.add_mutually_exclusive_group(required=True)
-    group1.add_argument('-gff', "--gff_file", help="Path to GFF file")
-    group1.add_argument('-pkl', "--pickle", help="Import gff as pickle file")
-
-    group2 = parser.add_mutually_exclusive_group(required=True)
-    group2.add_argument('-ig', "--annotation_file", help="Path to the annotation file (TSV)")
-    group2.add_argument('-it', "--transcript_file", help="Path to transcript annotation file")
-
-    parser.add_argument('-o', "--output_file_suffix", help="Output file suffix", required=True)
-    parser.add_argument('-ref', "--reference_genome", help="Reference genome (GrCh37/38)", required=True)
-    parser.add_argument('-f', "--flanking", type=int, help="Flanking size", required=True)
-    parser.add_argument('--assembly_summary', help="Path to assembly summary file", required=True)
-    # parser.add_argument('--report_name', help="Name for report")
-    argcomplete.autocomplete(parser)
-    args = parser.parse_args()
+    args = parse_args()
 
     # read in pickle file if provided
-    if args.pickle is not None:
+    if args.pickle:
         transcripts_df = parse_pickle(args.pickle)
         print("Parsed pickle file")
     else:
@@ -319,13 +334,14 @@ def main():
     collapsed_df.rename(columns=new_column_names, inplace=True)
 
     # Write the collapsed data to an output file
-    output_file_name = f"output_{args.reference_genome}" \
-                       f"_{args.output_file_suffix}.maf"
+    output_file_name = (
+        f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
+    )
     collapsed_df.to_csv(output_file_name, sep="\t",
                         header=False, index=False)
 
     # Create an IGV report
-    report = config_igv_report(args)
+    config_igv_report(args)
 
 if __name__ == "__main__":
     main()
