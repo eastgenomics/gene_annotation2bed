@@ -294,13 +294,11 @@ def main():
         transcripts_df = parse_gff(args.gff_file)
 
     # Read the annotation file into a pandas DataFrame
-    if args.annotation_file is not None:
+    if args.annotation_file:
         annotation_df = pd.read_csv(args.annotation_file, sep="\t")
     # Read the transcript annotation file
-    elif args.transcript_file is not None:
+    elif args.transcript_file:
         annotation_df = pd.read_csv(args.transcript_file, sep="\t")
-    else:
-        SystemExit("Please provide an annotation file")
 
     # Merge NM entries with matching HGNC IDs
     print("Merging annotation and gff dataframes")
