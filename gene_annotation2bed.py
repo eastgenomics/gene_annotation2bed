@@ -40,7 +40,8 @@ def parse_args() -> argparse.Namespace:
     group2.add_argument('-it', "--transcript_file", help="Path to transcript annotation file")
 
     parser.add_argument('-o', "--output_file_suffix", help="Output file suffix", required=True)
-    parser.add_argument('-ref', "--reference_genome", help="Reference genome (GrCh37/38)", required=True)
+    parser.add_argument('-ref', "--reference_genome", help="Reference genome (hg19/hg38)", required=True)
+    parser.add_argument('-fasta', "--reference_file", help="Path to Reference genome fasta file for igv_reports")
     parser.add_argument('-f', "--flanking", type=int, help="Flanking size", required=True)
     parser.add_argument('--assembly_summary', help="Path to assembly summary file", required=True)
     # parser.add_argument('--report_name', help="Name for report")
@@ -267,18 +268,23 @@ def config_igv_report(args):
     None
     """
     # assign vars.
-    bed_file = f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
+    maf_file = f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
+    bed_file = f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
     genome = args.reference_genome
+    fasta_ref = args.reference_file
     info_columns = []
     title = f"{args.output_file_suffix}_report"
     output_file = f"{title}.html"
     print("Creating IGV report...")
-    print(f"Bed file: {bed_file}, Genome: {genome}, Info columns: {info_columns}, Title: {title}, Output: {output_file}")
+
     print(
         f"Bed file: {bed_file}\nGenome: {genome}\n"
         f"Info columns: {info_columns}\nTitle: {title}\nOutput: {output_file}"
     )
-    igv.create_igv_report(bed_file, genome, info_columns, title, output_file)
+
+    igv.create_igv_report(bed_file, maf_file, genome, fasta_ref,
+                          info_columns, title, output_file)
+
     print("IGV report created successfully!")
 
 
@@ -332,10 +338,15 @@ def main():
     collapsed_df.rename(columns=new_column_names, inplace=True)
 
     # Write the collapsed data to an output file
-    output_file_name = (
+    output_file_name_maf = (
         f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
     )
-    collapsed_df.to_csv(output_file_name, sep="\t",
+    output_file_name_bed = (
+        f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
+    )
+    collapsed_df.to_csv(output_file_name_maf, sep="\t",
+                        header=True, index=False)
+    collapsed_df.to_csv(output_file_name_bed, sep="\t",
                         header=False, index=False)
 
     # Create an IGV report
