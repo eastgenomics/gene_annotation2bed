@@ -77,7 +77,7 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
             "--output", output_file
         ]
 
-    # tsv_based_cmd = [
+    # maf_based_cmd = [
     #     "create_report",
     #     "/home/rswilson1/Documents/Programming_project/gene_annotation2bed/output_hg19_overlap_test5_edit.maf",
     #     "--sequence", "1",
