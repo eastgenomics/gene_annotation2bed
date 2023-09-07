@@ -1,8 +1,0 @@
-[
-    {
-      "name": "Genes",
-      "type": "",
-      "url": "data/hg38/refGene.txt.gz",
-      "indexURL": "data/hg38/refGene.txt.gz.tbi"
-    }
-  ]
