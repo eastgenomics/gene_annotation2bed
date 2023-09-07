@@ -125,9 +125,6 @@ def parse_gff(gff_file):
 
     """
     transcripts_gff = gffpd.read_gff3(gff_file)
-    write = pd.DataFrame(transcripts_gff.df)
-    write.to_csv("initial_table.tsv", sep='\t', index=False)
-    info = transcripts_gff.stats_dic()
     gff_df = transcripts_gff.attributes_to_columns()
     # drop columns that are not needed to reduce memory footprint
     gff_df = gff_df.drop(['Gap', 'Is_circular', 'Name', 'Note', 'Parent',
@@ -174,7 +171,6 @@ def parse_gff(gff_file):
 
     # Filter GFF DataFrame to select entries with 'NM' type
     transcripts_df = gff_df[gff_df['transcript_id'].str.startswith('NM_')]
-    transcripts_df.to_csv("after_table.tsv", sep='\t', index=False)
     return transcripts_df
 
 
