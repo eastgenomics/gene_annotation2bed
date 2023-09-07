@@ -1,16 +1,22 @@
 import pandas as pd
 import unittest
 import sys
+from io import StringIO
+
+# set up the path to the module
 sys.path.append('../gene_annotation2bed')
 import gff2pandas
-from io import StringIO
 
 pd.set_option('display.max_rows', 50)
 pd.set_option('display.max_columns', 60)
 pd.set_option('display.width', 150)
 
+
 class Test_parsing_gff(unittest.TestCase):
     def setUp(self):
+        """
+        Set-up for the test cases.
+        """
         self.gff_file = "tests/test_data/test3.gff"
         self.gff = gff2pandas.read_gff3(self.gff_file)
         self.gff_df = self.gff.df
@@ -18,6 +24,12 @@ class Test_parsing_gff(unittest.TestCase):
         self.gff_new_df = self.gff.attributes_to_columns()
 
     def test_gff_parsing(self):
+        """
+        This tests:
+        The correct instances are produced by the set-up.
+        The correct columns are produced.
+        The correct values are produced in the columns.
+        """
         self.assertIsInstance(self.gff_df, pd.DataFrame)
         self.assertIsInstance(self.gff_header, str)
         self.assertEqual(self.gff_df.shape, (3, 9))
@@ -52,6 +64,7 @@ class Test_parsing_gff(unittest.TestCase):
     def test_attr_to_cols(self):
         """
         test the gff attributes column to pandas cols.
+        currently this is just checking the instance is a dataframe.
         """
         self.assertIsInstance(self.gff_new_df, pd.DataFrame)
         # Add further test here to check it
