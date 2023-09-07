@@ -122,7 +122,7 @@ def parse_gff(gff_file):
     | mRNA  | OR4F5 | NM_001005484.2 |   14825 |
     | mRNA  | OR4F5 | NM_001005484.2 |   14825 |
     +-------+-------+----------------+---------+
-
+    Produced using https://ozh.github.io/ascii-tables/.
     """
     transcripts_gff = gffpd.read_gff3(gff_file)
     gff_df = transcripts_gff.attributes_to_columns()
