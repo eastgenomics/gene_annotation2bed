@@ -20,17 +20,16 @@
         "phase": str,
         "attributes": str,
         }
-
-    TODO: Convert to package.
-
 """
 
 import itertools
 import pandas as pd
 import numpy as np
 
+
 def read_gff3(input_file):
     return Gff3DataFrame(input_file)
+
 
 def _split_atts(atts):
     """Split a feature string into attributes."""
@@ -106,7 +105,6 @@ class Gff3DataFrame(object):
                     break  # If no '#' is found, the header is finished.
         return self.header
 
-
     def attributes_to_columns(self) -> pd.DataFrame:
         """Saving each attribute-tag to a single column.
 
@@ -136,7 +134,6 @@ class Gff3DataFrame(object):
                 lambda at_dic: at_dic.get(atr)
             )
         return df_attributes
-
 
     def stats_dic(self) -> dict:
         """Gives the following statistics for the data:

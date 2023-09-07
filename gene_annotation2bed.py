@@ -9,12 +9,15 @@ Example cmd:
 -o "test6"
 """
 
-import argparse
-import argcomplete
+
 import pandas as pd
 import numpy as np
-import igv_report as igv
 import re
+
+import argparse
+import argcomplete
+import igv_report as igv
+
 
 import gff2pandas as gffpd
 
@@ -36,14 +39,21 @@ def parse_args() -> argparse.Namespace:
     group1.add_argument('-pkl', "--pickle", help="Import gff as pickle file")
 
     group2 = parser.add_mutually_exclusive_group(required=True)
-    group2.add_argument('-ig', "--annotation_file", help="Path to the annotation file (TSV)")
-    group2.add_argument('-it', "--transcript_file", help="Path to transcript annotation file")
+    group2.add_argument('-ig', "--annotation_file",
+                        help="Path to the annotation file (TSV)")
+    group2.add_argument('-it', "--transcript_file",
+                        help="Path to transcript annotation file")
 
-    parser.add_argument('-o', "--output_file_suffix", help="Output file suffix", required=True)
-    parser.add_argument('-ref', "--reference_genome", help="Reference genome (hg19/hg38)", required=True)
-    parser.add_argument('-fasta', "--reference_file", help="Path to Reference genome fasta file for igv_reports")
-    parser.add_argument('-f', "--flanking", type=int, help="Flanking size", required=True)
-    parser.add_argument('--assembly_summary', help="Path to assembly summary file", required=True)
+    parser.add_argument('-o', "--output_file_suffix",
+                        help="Output file suffix", required=True)
+    parser.add_argument('-ref', "--reference_genome",
+                        help="Reference genome (hg19/hg38)", required=True)
+    parser.add_argument('-fasta', "--reference_file",
+                        help="Path to Reference genome fasta file for igv_reports")
+    parser.add_argument('-f', "--flanking", type=int,
+                        help="Flanking size", required=True)
+    parser.add_argument('--assembly_summary',
+                        help="Path to assembly summary file", required=True)
     # parser.add_argument('--report_name', help="Name for report")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -156,7 +166,8 @@ def read_assembly_mapping(assembly_file):
         mapping of refseq accession to chromosome
     """
     accession_to_chromosome = {}
-    assembly_df = pd.read_csv(assembly_file, sep='\t', comment='#', header=None)
+    assembly_df = pd.read_csv(assembly_file, sep='\t',
+                              comment='#', header=None)
     assembly_df = assembly_df.dropna()  # Drop rows with missing values
     # filter out na from chromosome column and turn accession and chromosome columns to dict
     assembly_df = assembly_df[~assembly_df[2].str.startswith('na')]
@@ -203,7 +214,8 @@ def parse_pickle(pickle_file):
         Contains only transcripts with NM_ prefix.
     """
     gff_df = pd.read_pickle(pickle_file)
-    transcripts_df = gff_df[gff_df['transcript_id'].fillna('').str.startswith('NM_')]
+    transcripts_df = gff_df[gff_df['transcript_id'].fillna(
+        '').str.startswith('NM_')]
     return transcripts_df
 
 
@@ -225,22 +237,24 @@ def merge_overlapping(bed_df):
     # Sort by chromosome, start, and end
     # This makes sure that overlapping regions are next to each other.
 
-    bed_df = bed_df.sort_values(by=["annotation", "chromosome", "start_flank", "end_flank"])
+    bed_df = bed_df.sort_values(
+        by=["annotation", "chromosome", "start_flank", "end_flank"])
     # Sort by first annotation then chromosome, start, and end.
     merged_rows = []
 
     current_row = bed_df.iloc[0]
     for _, row in bed_df.iterrows():
         if row['annotation'] != current_row['annotation']:
-            merged_rows.append(current_row) # Append the merged row
-            current_row = row # Start a new potential merged row
+            merged_rows.append(current_row)  # Append the merged row
+            current_row = row  # Start a new potential merged row
             # Only rows with same annotation are merged
         if row["chromosome"] != current_row["chromosome"]:
             merged_rows.append(current_row)
             current_row = row
             # Only rows with same chromosome are merged.
         if row["start_flank"] <= current_row["end_flank"]:
-            current_row["end_flank"] = max(current_row["end_flank"], row["end_flank"])
+            current_row["end_flank"] = max(
+                current_row["end_flank"], row["end_flank"])
             # Extend the end if overlapping
         else:
             merged_rows.append(current_row)
@@ -315,13 +329,15 @@ def main():
     print("Adding flanking regions")
     merged_df["start_flank"] = merged_df["start"] - args.flanking
     merged_df["end_flank"] = merged_df["end"] + args.flanking
-    bed_columns = ["seq_id", "start_flank", "end_flank", "hgnc_id", "annotation", "gene"]
+    bed_columns = ["seq_id", "start_flank",
+                   "end_flank", "hgnc_id", "annotation", "gene"]
     bed_df = merged_df[bed_columns]
 
     # Extract chromosome from seqid and create the 'chromosome' column
     accession_to_chromosome = read_assembly_mapping(args.assembly_summary)
     # Add a new column 'chromosome' by mapping accession to chromosome identifier
-    bed_df.loc[:, "chromosome"] = bed_df["seq_id"].apply(lambda x: map_accession_to_chromosome(x, accession_to_chromosome))
+    bed_df.loc[:, "chromosome"] = bed_df["seq_id"].apply(
+        lambda x: map_accession_to_chromosome(x, accession_to_chromosome))
     print(f"Summary of BED file df before collapsing \n {bed_df.head()}")
 
     # # Merge overlapping entries
@@ -351,6 +367,7 @@ def main():
 
     # Create an IGV report
     config_igv_report(args)
+
 
 if __name__ == "__main__":
     main()
