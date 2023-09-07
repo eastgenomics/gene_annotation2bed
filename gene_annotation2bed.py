@@ -63,6 +63,10 @@ def parse_args() -> argparse.Namespace:
 def parse_gff(gff_file):
     """
     Summary: Import GFF3 file and convert to pandas DataFrame.
+    The GFF3 file is imported into a dataframe and then all the attributes
+    in the attributes column are split into seperate columns.
+    It then drops many of the additional fields from the attributes column
+    which are not needed to reduce memory footprint.
 
     Parameters
     ----------
@@ -74,8 +78,55 @@ def parse_gff(gff_file):
     transcripts_df : pandas DataFrame
         DataFrame containing the all the 'NM_' prefixed
         transcripts from the GFF3 file.
+
+    Transformation from initial dataframe (gff df) to final dataframe:
+    +--------------+------------+------------+-------+-----------+-------+
+    |    seq_id    |   source   |    type    | start |    end    | score |
+    +--------------+------------+------------+-------+-----------+-------+
+    | NC_000001.10 | RefSeq     | region     |     1 | 249250621 |     . |
+    | NC_000001.10 | BestRefSeq | pseudogene | 11874 |     14409 |     . |
+    | NC_000001.10 | BestRefSeq | transcript | 11874 |     14409 |     . |
+    +--------------+------------+------------+-------+-----------+-------+
+    +--------+-------+---------------------------------------------------+
+    | strand | phase |                   attributes                      |
+    +--------+-------+---------------------------------------------------+
+    | +      |     . | attributes string...                              |
+    | +      |     . | attributes string...                              |
+    | +      |     . | attributes string...                              |
+    +--------+-------+---------------------------------------------------+
+
+                                    |
+                                    |
+                                    |
+                                    V
+
+    Transcripts dataframe:
+    +--------------+------------+------+-------+-------+-------+--------+-------+
+    |    seq_id    |   source   | type | start |  end  | score | strand | phase |
+    +--------------+------------+------+-------+-------+-------+--------+-------+
+    | NC_000001.10 | BestRefSeq | mRNA | 65419 | 71585 |     . | +      |     . |
+    | NC_000001.10 | BestRefSeq | exon | 65419 | 65433 |     . | +      |     . |
+    | NC_000001.10 | BestRefSeq | exon | 65520 | 65573 |     . | +      |     . |
+    +--------------+------------+------+-------+-------+-------+--------+-------+
+    +-----------------------------------------------------+----------------------+
+    |                       Dbxref                        |          ID          |
+    +-----------------------------------------------------+----------------------+
+    | GeneID:79501,Genbank:NM_001005484.2,HGNC:HGNC:14825 | rna-NM_001005484.2   |
+    | GeneID:79501,Genbank:NM_001005484.2,HGNC:HGNC:14825 | exon-NM_001005484.2-1|
+    | GeneID:79501,Genbank:NM_001005484.2,HGNC:HGNC:14825 | exon-NM_001005484.2-2|
+    +-----------------------------------------------------+----------------------+
+    +-------+-------+----------------+---------+
+    | gbkey | gene  | transcript_id  | hgnc_id |
+    +-------+-------+----------------+---------+
+    | mRNA  | OR4F5 | NM_001005484.2 |   14825 |
+    | mRNA  | OR4F5 | NM_001005484.2 |   14825 |
+    | mRNA  | OR4F5 | NM_001005484.2 |   14825 |
+    +-------+-------+----------------+---------+
+
     """
     transcripts_gff = gffpd.read_gff3(gff_file)
+    write = pd.DataFrame(transcripts_gff.df)
+    write.to_csv("initial_table.tsv", sep='\t', index=False)
     info = transcripts_gff.stats_dic()
     gff_df = transcripts_gff.attributes_to_columns()
     # drop columns that are not needed to reduce memory footprint
@@ -109,10 +160,12 @@ def parse_gff(gff_file):
 
     # Apply extract_hgnc_id function to create 'hgnc_id' column
     gff_df['hgnc_id'] = gff_df['Dbxref'].apply(extract_hgnc_id)
-
+    print(gff_df.head())
+    print(gff_df['ID'].head())
+    #gff_df.to_csv("before_table.tsv", sep='\t', index=False)
     # set dtype for each column to reduce memory footprint
     dtype_mapping = {
-        'ID': 'str',
+        'ID': 'category',
         'transcript_id': 'str',
         'hgnc_id': 'Int64',
     }
@@ -121,7 +174,7 @@ def parse_gff(gff_file):
 
     # Filter GFF DataFrame to select entries with 'NM' type
     transcripts_df = gff_df[gff_df['transcript_id'].str.startswith('NM_')]
-
+    transcripts_df.to_csv("after_table.tsv", sep='\t', index=False)
     return transcripts_df
 
 
