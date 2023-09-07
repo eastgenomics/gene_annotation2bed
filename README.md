@@ -29,7 +29,8 @@ and bed file aligned with the respecive annotation.
   index should be present in the same folder.
 - The output file suffix for the outputed .bed file.
 - Flanking (int): The required flanking either side of the transcripts selected.
-- Assembly summary - corresponding assembly report file for the refseq.gff.
+- Assembly summary - corresponding assembly report file for the refseq.gff, this is used
+  to determine the corresponding chromosome for each transcript.
 
 ## Requirements
 - pysam
