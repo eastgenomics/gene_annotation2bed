@@ -3,6 +3,7 @@
 Custom script for processing a list of ids (HGNC, transcript) or coordinates with associated annotation, into a comprehensive bed file for the corresponding refseq transcripts for each ID entry.
 
 ## What are typical use cases for this script?
+
 - Converting a list of HGNC ids + associated gene level annotation information
   into a comprehensive bed file for annotation with Ensemble's VEP.
 - Other use cases include providing different inputs such a list of transcripts.
@@ -13,9 +14,11 @@ Custom script for processing a list of ids (HGNC, transcript) or coordinates wit
 - List of ids and annotation information in TSV format.
 - Human Genome Reference (i.e. hs37d5)
 - RefSeq Transcripts file (gff3)
+
 ## IGV reports output
+
 Example Output:
-[!image] (https://raw.githubusercontent.com/eastgenomics/gene_annotation2bed/dev/data/demo/demo_igv_reports.png)
+[!image] (<https://raw.githubusercontent.com/eastgenomics/gene_annotation2bed/dev/data/demo/demo_igv_reports.png>)
 
 The script produces a HTML report of all the bed file entries. Displayed in IGV with the refseq track
 and bed file aligned with the respecive annotation.
