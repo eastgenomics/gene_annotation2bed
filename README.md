@@ -2,12 +2,13 @@
 
 Custom script for processing a list of ids (HGNC, transcript) or coordinates with associated annotation, into a comprehensive bed file for the corresponding refseq transcripts for each ID entry.
 
-## What are typical use cases for this app?
+## What are typical use cases for this script?
 - Converting a list of HGNC ids + associated gene level annotation information
   into a comprehensive bed file for annotation with Ensemble's VEP.
-- Other use cases include providing different inputs such a list of transcripts/exact coordinates.
+- Other use cases include providing different inputs such a list of transcripts.
+  Or using exact coordinates to flag a regions such as TERT promoter.
 
-## What data are required for this app to run?
+## What data are required for this script to run?
 
 - List of ids and annotation information in TSV format.
 - Human Genome Reference (i.e. hs37d5)
@@ -33,10 +34,10 @@ and bed file aligned with the respecive annotation.
   to determine the corresponding chromosome for each transcript.
 
 ## Requirements
+
 - pysam
 - pandas
 - igv-reports (v)
-  argparse
 - numpy
 - re
 

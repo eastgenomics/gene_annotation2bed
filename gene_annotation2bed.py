@@ -9,15 +9,13 @@ Example cmd:
 -o "test6"
 """
 
-
-import pandas as pd
-import numpy as np
-import re
-
 import argparse
+
 import argcomplete
 import igv_report as igv
-
+import numpy as np
+import pandas as pd
+import re
 
 import gff2pandas as gffpd
 
