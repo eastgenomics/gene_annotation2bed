@@ -1,0 +1,58 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+#!genome-build GRCh37.p13
+#!genome-build-accession NCBI_Assembly:GCF_000001405.25
+#!annotation-date 03/07/2022
+#!annotation-source NCBI Homo sapiens Updated Annotation Release 105.20220307
+##sequence-region NC_000001.10 1 249250621
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+NC_012920.1	RefSeq	gene	9991	10058	.	+	.	ID=gene-TRNG;Dbxref=GeneID:4563,HGNC:HGNC:7486,MIM:590035;Name=TRNG;gbkey=Gene;gene=TRNG;gene_biotype=tRNA;gene_synonym=MTTG
+NC_012920.1	RefSeq	tRNA	9991	10058	.	+	.	ID=rna-TRNG;Parent=gene-TRNG;Dbxref=GeneID:4563,HGNC:HGNC:7486,MIM:590035;Note=NAR: 0797;anticodon=(pos:10021..10023);codons=62;gbkey=tRNA;gene=TRNG;product=tRNA-Gly
+NC_012920.1	RefSeq	exon	9991	10058	.	+	.	ID=exon-TRNG-1;Parent=rna-TRNG;Dbxref=GeneID:4563,HGNC:HGNC:7486,MIM:590035;Note=NAR: 0797;anticodon=(pos:10021..10023);codons=62;gbkey=tRNA;gene=TRNG;product=tRNA-Gly
+NC_012920.1	RefSeq	gene	10059	10404	.	+	.	ID=gene-ND3;Dbxref=GeneID:4537,HGNC:HGNC:7458,MIM:516002;Name=ND3;gbkey=Gene;gene=ND3;gene_biotype=protein_coding;gene_synonym=MTND3
+NC_012920.1	RefSeq	mRNA	10059	10404	.	+	.	ID=rna-ND3;Parent=gene-ND3;Dbxref=GeneID:4537,HGNC:HGNC:7458,MIM:516002;gbkey=mRNA;gene=ND3
+NC_012920.1	RefSeq	exon	10059	10404	.	+	.	ID=exon-ND3-1;Parent=rna-ND3;Dbxref=GeneID:4537,HGNC:HGNC:7458,MIM:516002;gbkey=mRNA;gene=ND3
+NC_012920.1	RefSeq	CDS	10059	10404	.	+	0	ID=cds-YP_003024033.1;Parent=rna-ND3;Dbxref=Genbank:YP_003024033.1,GeneID:4537,HGNC:HGNC:7458,MIM:516002;Name=YP_003024033.1;Note=TAA stop codon is completed by the addition of 3' A residues to the mRNA;gbkey=CDS;gene=ND3;product=NADH dehydrogenase subunit 3;protein_id=YP_003024033.1;transl_except=(pos:10404..10404%2Caa:TERM);transl_table=2
+NC_012920.1	RefSeq	gene	10405	10469	.	+	.	ID=gene-TRNR;Dbxref=GeneID:4573,HGNC:HGNC:7496,MIM:590005;Name=TRNR;gbkey=Gene;gene=TRNR;gene_biotype=tRNA;gene_synonym=MTTR
+NC_012920.1	RefSeq	tRNA	10405	10469	.	+	.	ID=rna-TRNR;Parent=gene-TRNR;Dbxref=GeneID:4573,HGNC:HGNC:7496,MIM:590005;Note=NAR: 0197;anticodon=(pos:10435..10437);codons=30;gbkey=tRNA;gene=TRNR;product=tRNA-Arg
+NC_012920.1	RefSeq	exon	10405	10469	.	+	.	ID=exon-TRNR-1;Parent=rna-TRNR;Dbxref=GeneID:4573,HGNC:HGNC:7496,MIM:590005;Note=NAR: 0197;anticodon=(pos:10435..10437);codons=30;gbkey=tRNA;gene=TRNR;product=tRNA-Arg
+NC_012920.1	RefSeq	gene	10470	10766	.	+	.	ID=gene-ND4L;Dbxref=GeneID:4539,HGNC:HGNC:7460,MIM:516004;Name=ND4L;gbkey=Gene;gene=ND4L;gene_biotype=protein_coding;gene_synonym=MTND4L
+NC_012920.1	RefSeq	mRNA	10470	10766	.	+	.	ID=rna-ND4L;Parent=gene-ND4L;Dbxref=GeneID:4539,HGNC:HGNC:7460,MIM:516004;gbkey=mRNA;gene=ND4L
+NC_012920.1	RefSeq	exon	10470	10766	.	+	.	ID=exon-ND4L-1;Parent=rna-ND4L;Dbxref=GeneID:4539,HGNC:HGNC:7460,MIM:516004;gbkey=mRNA;gene=ND4L
+NC_012920.1	RefSeq	CDS	10470	10766	.	+	0	ID=cds-YP_003024034.1;Parent=rna-ND4L;Dbxref=Genbank:YP_003024034.1,GeneID:4539,HGNC:HGNC:7460,MIM:516004;Name=YP_003024034.1;gbkey=CDS;gene=ND4L;product=NADH dehydrogenase subunit 4L;protein_id=YP_003024034.1;transl_table=2
+NC_012920.1	RefSeq	gene	10760	12137	.	+	.	ID=gene-ND4;Dbxref=GeneID:4538,HGNC:HGNC:7459,MIM:516003;Name=ND4;gbkey=Gene;gene=ND4;gene_biotype=protein_coding;gene_synonym=MTND4
+NC_012920.1	RefSeq	mRNA	10760	12137	.	+	.	ID=rna-ND4;Parent=gene-ND4;Dbxref=GeneID:4538,HGNC:HGNC:7459,MIM:516003;gbkey=mRNA;gene=ND4
+NC_012920.1	RefSeq	exon	10760	12137	.	+	.	ID=exon-ND4-1;Parent=rna-ND4;Dbxref=GeneID:4538,HGNC:HGNC:7459,MIM:516003;gbkey=mRNA;gene=ND4
+NC_012920.1	RefSeq	CDS	10760	12137	.	+	0	ID=cds-YP_003024035.1;Parent=rna-ND4;Dbxref=Genbank:YP_003024035.1,GeneID:4538,HGNC:HGNC:7459,MIM:516003;Name=YP_003024035.1;Note=TAA stop codon is completed by the addition of 3' A residues to the mRNA;gbkey=CDS;gene=ND4;product=NADH dehydrogenase subunit 4;protein_id=YP_003024035.1;transl_except=(pos:12137..12137%2Caa:TERM);transl_table=2
+NC_012920.1	RefSeq	gene	12138	12206	.	+	.	ID=gene-TRNH;Dbxref=GeneID:4564,HGNC:HGNC:7487,MIM:590040;Name=TRNH;gbkey=Gene;gene=TRNH;gene_biotype=tRNA;gene_synonym=MTTH
+NC_012920.1	RefSeq	tRNA	12138	12206	.	+	.	ID=rna-TRNH;Parent=gene-TRNH;Dbxref=GeneID:4564,HGNC:HGNC:7487,MIM:590040;Note=NAR: 0897;anticodon=(pos:12168..12170);codons=25;gbkey=tRNA;gene=TRNH;product=tRNA-His
+NC_012920.1	RefSeq	exon	12138	12206	.	+	.	ID=exon-TRNH-1;Parent=rna-TRNH;Dbxref=GeneID:4564,HGNC:HGNC:7487,MIM:590040;Note=NAR: 0897;anticodon=(pos:12168..12170);codons=25;gbkey=tRNA;gene=TRNH;product=tRNA-His
+NC_012920.1	RefSeq	gene	12207	12265	.	+	.	ID=gene-TRNS2;Dbxref=GeneID:4575,HGNC:HGNC:7498,MIM:590085;Name=TRNS2;gbkey=Gene;gene=TRNS2;gene_biotype=tRNA;gene_synonym=MTTS2
+NC_012920.1	RefSeq	tRNA	12207	12265	.	+	.	ID=rna-TRNS2;Parent=gene-TRNS2;Dbxref=GeneID:4575,HGNC:HGNC:7498,MIM:590085;Note=NAR: 1656;anticodon=(pos:12226..12228);codons=44%2C45;gbkey=tRNA;gene=TRNS2;product=tRNA-Ser
+NC_012920.1	RefSeq	exon	12207	12265	.	+	.	ID=exon-TRNS2-1;Parent=rna-TRNS2;Dbxref=GeneID:4575,HGNC:HGNC:7498,MIM:590085;Note=NAR: 1656;anticodon=(pos:12226..12228);codons=44%2C45;gbkey=tRNA;gene=TRNS2;product=tRNA-Ser
+NC_012920.1	RefSeq	gene	12266	12336	.	+	.	ID=gene-TRNL2;Dbxref=GeneID:4568,HGNC:HGNC:7491,MIM:590055;Name=TRNL2;gbkey=Gene;gene=TRNL2;gene_biotype=tRNA;gene_synonym=MTTL2
+NC_012920.1	RefSeq	tRNA	12266	12336	.	+	.	ID=rna-TRNL2;Parent=gene-TRNL2;Dbxref=GeneID:4568,HGNC:HGNC:7491,MIM:590055;Note=NAR: 1097;anticodon=(pos:12298..12300);codons=16%2C17%2C18%2C19;gbkey=tRNA;gene=TRNL2;product=tRNA-Leu
+NC_012920.1	RefSeq	exon	12266	12336	.	+	.	ID=exon-TRNL2-1;Parent=rna-TRNL2;Dbxref=GeneID:4568,HGNC:HGNC:7491,MIM:590055;Note=NAR: 1097;anticodon=(pos:12298..12300);codons=16%2C17%2C18%2C19;gbkey=tRNA;gene=TRNL2;product=tRNA-Leu
+NC_012920.1	RefSeq	gene	12337	14148	.	+	.	ID=gene-ND5;Dbxref=GeneID:4540,HGNC:HGNC:7461,MIM:516005;Name=ND5;gbkey=Gene;gene=ND5;gene_biotype=protein_coding;gene_synonym=MTND5
+NC_012920.1	RefSeq	mRNA	12337	14148	.	+	.	ID=rna-ND5;Parent=gene-ND5;Dbxref=GeneID:4540,HGNC:HGNC:7461,MIM:516005;gbkey=mRNA;gene=ND5
+NC_012920.1	RefSeq	exon	12337	14148	.	+	.	ID=exon-ND5-1;Parent=rna-ND5;Dbxref=GeneID:4540,HGNC:HGNC:7461,MIM:516005;gbkey=mRNA;gene=ND5
+NC_012920.1	RefSeq	CDS	12337	14148	.	+	0	ID=cds-YP_003024036.1;Parent=rna-ND5;Dbxref=Genbank:YP_003024036.1,GeneID:4540,HGNC:HGNC:7461,MIM:516005;Name=YP_003024036.1;gbkey=CDS;gene=ND5;product=NADH dehydrogenase subunit 5;protein_id=YP_003024036.1;transl_table=2
+NC_012920.1	RefSeq	gene	14149	14673	.	-	.	ID=gene-ND6;Dbxref=GeneID:4541,HGNC:HGNC:7462,MIM:516006;Name=ND6;gbkey=Gene;gene=ND6;gene_biotype=protein_coding;gene_synonym=MTND6
+NC_012920.1	RefSeq	mRNA	14149	14673	.	-	.	ID=rna-ND6;Parent=gene-ND6;Dbxref=GeneID:4541,HGNC:HGNC:7462,MIM:516006;gbkey=mRNA;gene=ND6
+NC_012920.1	RefSeq	exon	14149	14673	.	-	.	ID=exon-ND6-1;Parent=rna-ND6;Dbxref=GeneID:4541,HGNC:HGNC:7462,MIM:516006;gbkey=mRNA;gene=ND6
+NC_012920.1	RefSeq	CDS	14149	14673	.	-	0	ID=cds-YP_003024037.1;Parent=rna-ND6;Dbxref=Genbank:YP_003024037.1,GeneID:4541,HGNC:HGNC:7462,MIM:516006;Name=YP_003024037.1;gbkey=CDS;gene=ND6;product=NADH dehydrogenase subunit 6;protein_id=YP_003024037.1;transl_table=2
+NC_012920.1	RefSeq	gene	14674	14742	.	-	.	ID=gene-TRNE;Dbxref=GeneID:4556,HGNC:HGNC:7479,MIM:590025;Name=TRNE;gbkey=Gene;gene=TRNE;gene_biotype=tRNA;gene_synonym=MTTE
+NC_012920.1	RefSeq	tRNA	14674	14742	.	-	.	ID=rna-TRNE;Parent=gene-TRNE;Dbxref=GeneID:4556,HGNC:HGNC:7479,MIM:590025;Note=NAR: 0697;anticodon=(pos:complement(14710..14712));codons=58;gbkey=tRNA;gene=TRNE;product=tRNA-Glu
+NC_012920.1	RefSeq	exon	14674	14742	.	-	.	ID=exon-TRNE-1;Parent=rna-TRNE;Dbxref=GeneID:4556,HGNC:HGNC:7479,MIM:590025;Note=NAR: 0697;anticodon=(pos:complement(14710..14712));codons=58;gbkey=tRNA;gene=TRNE;product=tRNA-Glu
+NC_012920.1	RefSeq	gene	14747	15887	.	+	.	ID=gene-CYTB;Dbxref=GeneID:4519,HGNC:HGNC:7427,MIM:516020;Name=CYTB;gbkey=Gene;gene=CYTB;gene_biotype=protein_coding;gene_synonym=MTCYB
+NC_012920.1	RefSeq	mRNA	14747	15887	.	+	.	ID=rna-CYTB;Parent=gene-CYTB;Dbxref=GeneID:4519,HGNC:HGNC:7427,MIM:516020;gbkey=mRNA;gene=CYTB
+NC_012920.1	RefSeq	exon	14747	15887	.	+	.	ID=exon-CYTB-1;Parent=rna-CYTB;Dbxref=GeneID:4519,HGNC:HGNC:7427,MIM:516020;gbkey=mRNA;gene=CYTB
+NC_012920.1	RefSeq	CDS	14747	15887	.	+	0	ID=cds-YP_003024038.1;Parent=rna-CYTB;Dbxref=Genbank:YP_003024038.1,GeneID:4519,HGNC:HGNC:7427,MIM:516020;Name=YP_003024038.1;Note=TAA stop codon is completed by the addition of 3' A residues to the mRNA;gbkey=CDS;gene=CYTB;product=cytochrome b;protein_id=YP_003024038.1;transl_except=(pos:15887..15887%2Caa:TERM);transl_table=2
+NC_012920.1	RefSeq	gene	15888	15953	.	+	.	ID=gene-TRNT;Dbxref=GeneID:4576,HGNC:HGNC:7499,MIM:590090;Name=TRNT;gbkey=Gene;gene=TRNT;gene_biotype=tRNA;gene_synonym=MTTT
+NC_012920.1	RefSeq	tRNA	15888	15953	.	+	.	ID=rna-TRNT;Parent=gene-TRNT;Dbxref=GeneID:4576,HGNC:HGNC:7499,MIM:590090;Note=NAR: 1797;anticodon=(pos:15919..15921);codons=38;gbkey=tRNA;gene=TRNT;product=tRNA-Thr
+NC_012920.1	RefSeq	exon	15888	15953	.	+	.	ID=exon-TRNT-1;Parent=rna-TRNT;Dbxref=GeneID:4576,HGNC:HGNC:7499,MIM:590090;Note=NAR: 1797;anticodon=(pos:15919..15921);codons=38;gbkey=tRNA;gene=TRNT;product=tRNA-Thr
+NC_012920.1	RefSeq	gene	15956	16023	.	-	.	ID=gene-TRNP;Dbxref=GeneID:4571,HGNC:HGNC:7494,MIM:590075;Name=TRNP;gbkey=Gene;gene=TRNP;gene_biotype=tRNA;gene_synonym=MTTP
+NC_012920.1	RefSeq	tRNA	15956	16023	.	-	.	ID=rna-TRNP;Parent=gene-TRNP;Dbxref=GeneID:4571,HGNC:HGNC:7494,MIM:590075;Note=NAR: 1597;anticodon=(pos:complement(15990..15992));codons=22;gbkey=tRNA;gene=TRNP;product=tRNA-Pro
+NC_012920.1	RefSeq	exon	15956	16023	.	-	.	ID=exon-TRNP-1;Parent=rna-TRNP;Dbxref=GeneID:4571,HGNC:HGNC:7494,MIM:590075;Note=NAR: 1597;anticodon=(pos:complement(15990..15992));codons=22;gbkey=tRNA;gene=TRNP;product=tRNA-Pro
+NC_012920.1	RefSeq	D_loop	16024	17145	.	-	.	ID=id-NC_012920.1:1..16569;gbkey=D-loop
