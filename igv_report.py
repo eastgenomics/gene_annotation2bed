@@ -33,7 +33,7 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
         {
             "name": 'BED',
             "type": '',
-            "url": f'{bed_file}.gz', # /home/rswilson1/Documents/Programming_project/gene_annotation2bed/output_hg19_overlap_test7.bed.gz
+            "url": f'{bed_file}.gz',
             "indexURL": f'{bed_file}.gz.tbi'
         },
     ]
@@ -56,7 +56,7 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
         maf_based_cmd = [
             "create_report",
             maf_file,
-            "--fasta", reference_file,  # /home/rswilson1/Documents/MSC_dissertation/MELT_example_data/hs37d5.fa
+            "--fasta", reference_file,
             "--sequence", "1",
             "--begin", "2",
             "--end", "3",
@@ -76,22 +76,6 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
             "--title", title,
             "--output", output_file
         ]
-
-    # maf_based_cmd = [
-    #     "create_report",
-    #     "/home/rswilson1/Documents/Programming_project/gene_annotation2bed/output_hg19_overlap_test5_edit.maf",
-    #     "--sequence", "1",
-    #     "--begin", "2",
-    #     "--end", "3",
-    #     "--fasta", "/home/rswilson1/Documents/MSC_dissertation/MELT_example_data/hs37d5.fa",
-    #     "--zero_based", "true",
-    #     #"--info-columns", "chr", "start", "end", "annotation", "gene", # info_columns
-    #     "--tracks", bed_file,
-    #     "--track-config", "TracksConfig.json",
-    #     #"--genome", genome,
-    #     "--title", title,
-    #     "--output", output_file
-    # ]
 
     result = subprocess.run(maf_based_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     print(result.returncode)

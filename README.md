@@ -42,3 +42,5 @@ and bed file aligned with the respecive annotation.
 - re
 
 install using `requirements.txt`. `pip install requirements.txt`
+
+## Running Script
