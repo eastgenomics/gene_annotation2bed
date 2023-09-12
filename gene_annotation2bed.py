@@ -166,8 +166,6 @@ def parse_gff(gff_file):
 
     # Apply extract_hgnc_id function to create 'hgnc_id' column
     gff_df['hgnc_id'] = gff_df['Dbxref'].apply(extract_hgnc_id)
-    print(gff_df.head())
-    print(gff_df['ID'].head())
 
     # set dtype for each column to reduce memory footprint
     dtype_mapping = {
@@ -240,17 +238,13 @@ def parse_annotation_tsv(path, gff_transcripts_df):
     transcript_df = transcript_df.rename(columns={'ID': 'transcript_id'})
     coordinates_df = coordinates_df.rename(columns={'ID': 'Coordinates'})
 
-    # Merge the HGNC and Transcript dataframes with another dataframe based on the 'ID' column
-    print(gff_transcripts_df.columns)
-
-    # print(gff_transcripts_df.head())
-    # print(hgnc_df.head())
     # Remove everything after '.' in the "transcript_id" column
-    gff_transcripts_df['transcript_id'] = gff_transcripts_df['transcript_id'].str.split(
-        '.').str[0]
-    transcript_df['transcript_id'] = transcript_df['transcript_id'].str.split(
-        '.').str[0]
+    gff_transcripts_df['transcript_id'] = gff_transcripts_df[
+        'transcript_id'].str.split('.').str[0]
+    transcript_df['transcript_id'] = transcript_df[
+        'transcript_id'].str.split('.').str[0]
 
+    # Merge the HGNC and Transcript dataframes with gff dataframe based on the 'ID' column
     merged_hgnc_df = gff_transcripts_df.merge(hgnc_df, on="hgnc_id",
                                               how="inner")
     merged_transcript_df = gff_transcripts_df.merge(transcript_df,
@@ -279,11 +273,15 @@ def parse_annotation_tsv(path, gff_transcripts_df):
 
     # Coordinates dataframe split into columns
     # Split the "Coordinates" column by ':' and '-'
-    coordinates_df[['chromosome', 'start', 'end']] = coordinates_df['Coordinates'].str.split('[:-]', expand=True)
-    coordinates_df['chromosome'] = coordinates_df['chromosome'].str.replace(r'(?i)chr(omosome)?', '', regex=True)
-    # Create the "gene" column with a placeholder value since it's not present in coordinates_df
+    coordinates_df[['chromosome', 'start', 'end']] = coordinates_df[
+        'Coordinates'].str.split('[:-]', expand=True)
+    coordinates_df['chromosome'] = coordinates_df['chromosome'].str.replace(
+        r'(?i)chr(omosome)?', '', regex=True
+    )
+    # Create the "gene" column with a placeholder since it's not present.
     coordinates_df['gene'] = ''
-    coordinates_df = coordinates_df[['chromosome', 'start', 'end', 'annotation', 'gene']]
+    coordinates_df = coordinates_df[['chromosome', 'start',
+                                     'end', 'annotation', 'gene']]
 
     return final_df, coordinates_df
 
@@ -394,7 +392,8 @@ def merge_overlapping(bed_df):
     Returns
     -------
     merged_df: dataframe
-        dataframe of merged rows with columns: chromosome, start, end, annotation
+        dataframe of merged rows with columns: chromosome, start,
+        end, annotation
     """
     # Sort by chromosome, start, and end
     # This makes sure that overlapping regions are next to each other.
