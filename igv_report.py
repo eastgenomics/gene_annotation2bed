@@ -53,6 +53,7 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
     print("Standard Output:", index_result.stdout)
     print("Standard Error:", index_result.stderr)
     if reference_file:
+        print(f"Using provided reference {reference_file}")
         maf_based_cmd = [
             "create_report",
             maf_file,
@@ -67,6 +68,7 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
         ]
 
     elif genome:
+        print(f"Using genome reference {genome}")
         maf_based_cmd = [
             "create_report",
             maf_file,
