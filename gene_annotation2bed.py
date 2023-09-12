@@ -280,8 +280,10 @@ def parse_annotation_tsv(path, gff_transcripts_df):
     # Coordinates dataframe split into columns
     # Split the "Coordinates" column by ':' and '-'
     coordinates_df[['chromosome', 'start', 'end']] = coordinates_df['Coordinates'].str.split('[:-]', expand=True)
+    coordinates_df['chromosome'] = coordinates_df['chromosome'].str.replace(r'(?i)chr(omosome)?', '', regex=True)
     # Create the "gene" column with a placeholder value since it's not present in coordinates_df
     coordinates_df['gene'] = ''
+    coordinates_df = coordinates_df[['chromosome', 'start', 'end', 'annotation', 'gene']]
 
     return final_df, coordinates_df
 
@@ -462,15 +464,13 @@ def config_igv_report(args):
     print("IGV report created successfully!")
 
 
-def write_bed(transcripts_df, annotation_df, coordinates_df, args):
+def write_bed(annotation_df, coordinates_df, args) -> None:
     """
     Combines dataframes, extracts chromosome for HGNC_ids,
     and writes to MAF & BED file for IGV visualisation and VEP annotation.
 
     Parameters
     ----------
-    transcripts_df : _type_
-        _description_
     annotation_df : _type_
         _description_
     coordinates_df : _type_
@@ -507,7 +507,10 @@ def write_bed(transcripts_df, annotation_df, coordinates_df, args):
         "end_flank": "end"
     }
     collapsed_df.rename(columns=new_column_names, inplace=True)
-
+    print(coordinates_df.head())
+    collapsed_df = pd.concat([collapsed_df, coordinates_df],
+                             axis=0, ignore_index=True)
+    print(collapsed_df.head(10))
     # Write the collapsed data to an output file
     output_file_name_maf = (
         f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
@@ -550,7 +553,7 @@ def main():
 
     # Merge NM entries with matching HGNC IDs
     print("Merging annotation and gff dataframes")
-    write_bed(transcripts_df, annotation_df, coordinates_df, args)
+    write_bed(annotation_df, coordinates_df, args)
 
     # Create an IGV report
     config_igv_report(args)
