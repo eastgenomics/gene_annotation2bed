@@ -34,25 +34,34 @@ def parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(description="GFF Processing Script")
     group1 = parser.add_mutually_exclusive_group(required=True)
-    group1.add_argument('-gff', "--gff_file", help="Path to GFF file")
-    group1.add_argument('-pkl', "--pickle", help="Import gff as pickle file")
+    group1.add_argument("-gff", "--gff_file", help="Path to GFF file")
+    group1.add_argument("-pkl", "--pickle", help="Import gff as pickle file")
 
     group2 = parser.add_mutually_exclusive_group(required=True)
-    group2.add_argument('-ig', "--annotation_file",
-                        help="Path to the annotation file (TSV)")
-    group2.add_argument('-it', "--transcript_file",
-                        help="Path to transcript annotation file")
+    group2.add_argument(
+        "-ig", "--annotation_file", help="Path to the annotation file (TSV)"
+    )
+    group2.add_argument(
+        "-it", "--transcript_file", help="Path to transcript annotation file"
+    )
 
-    parser.add_argument('-o', "--output_file_suffix",
-                        help="Output file suffix", required=True)
-    parser.add_argument('-ref', "--reference_genome",
-                        help="Reference genome (hg19/hg38)", required=True)
-    parser.add_argument('-fasta', "--reference_file",
-                        help="Path to Reference genome fasta file for igv_reports")
-    parser.add_argument('-f', "--flanking", type=int,
-                        help="Flanking size", required=True)
-    parser.add_argument('--assembly_summary',
-                        help="Path to assembly summary file", required=True)
+    parser.add_argument(
+        "-o", "--output_file_suffix", help="Output file suffix", required=True
+    )
+    parser.add_argument(
+        "-ref", "--reference_genome", help="Reference genome (hg19/hg38)", required=True
+    )
+    parser.add_argument(
+        "-fasta",
+        "--reference_file",
+        help="Path to Reference genome fasta file for igv_reports",
+    )
+    parser.add_argument(
+        "-f", "--flanking", type=int, help="Flanking size", required=True
+    )
+    parser.add_argument(
+        "--assembly_summary", help="Path to assembly summary file", required=True
+    )
     # parser.add_argument('--report_name', help="Name for report")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -136,48 +145,44 @@ def parse_gff(gff_file):
     transcripts_gff = gffpd.read_gff3(gff_file)
     gff_df = transcripts_gff.attributes_to_columns()
     # drop columns that are not needed to reduce memory footprint
-    gff_df = gff_df.drop(['Gap', 'Is_circular', 'Name', 'Note', 'Parent',
-                          'Target', 'anticodon', 'assembly_bases_aln',
-                          'assembly_bases_seq', 'bit_score', 'blast_aligner',
-                          'blast_score', 'bound_moiety', 'chromosome',
-                          'codons', 'common_component', 'consensus_splices',
-                          'country', 'description', 'direction', 'e_value',
-                          'end_range', 'exception', 'exon_identity',
-                          'exon_number', 'experiment', 'feat_class',
-                          'filter_score', 'for_remapping', 'function',
-                          'gap_count', 'gene_biotype', 'gene_synonym',
-                          'genome', 'hsp_percent_coverage', 'identity',
-                          'idty', 'inference', 'inversion_merge_aligner',
-                          'isolation-source', 'lxr_locAcc_currStat_120',
-                          'lxr_locAcc_currStat_35', 'map', 'matchable_bases',
-                          'matched_bases', 'matches', 'merge_aligner',
-                          'mobile_element_type', 'mol_type',
-                          'not_for_annotation', 'note', 'num_ident',
-                          'num_mismatch', 'number', 'partial', 'pct_coverage',
-                          'pct_coverage_hiqual', 'pct_identity_gap',
-                          'pct_identity_gapopen_only', 'pct_identity_ungap',
-                          'product', 'product_coverage', 'protein_id',
-                          'pseudo', 'rank', 'recombination_class',
-                          'regulatory_class', 'rpt_family', 'rpt_type',
-                          'rpt_unit_range', 'rpt_unit_seq', 'satellite',
-                          'splices', 'standard_name', 'start_range', 'tag',
-                          'tissue-type', 'transl_except', 'transl_table',
-                          'weighted_identity'], axis=1)
+    gff_df = gff_df.drop(
+        [
+            "Gap","Is_circular", "Name", "Note", "Parent", "Target", "anticodon",
+            "assembly_bases_aln", "assembly_bases_seq", "bit_score", "blast_aligner",
+            "blast_score", "bound_moiety", "chromosome", "codons", "common_component",
+            "consensus_splices", "country", "description", "direction", "e_value",
+            "end_range", "exception", "exon_identity", "exon_number", "experiment",
+            "feat_class", "filter_score", "for_remapping", "function", "gap_count",
+            "gene_biotype", "gene_synonym", "genome", "hsp_percent_coverage",
+            "identity", "idty", "inference", "inversion_merge_aligner",
+            "isolation-source", "lxr_locAcc_currStat_120", "lxr_locAcc_currStat_35",
+            "map", "matchable_bases", "matched_bases", "matches", "merge_aligner",
+            "mobile_element_type", "mol_type", "not_for_annotation", "note",
+            "num_ident", "num_mismatch", "number", "partial", "pct_coverage",
+            "pct_coverage_hiqual", "pct_identity_gap", "pct_identity_gapopen_only",
+            "pct_identity_ungap", "product", "product_coverage", "protein_id",
+            "pseudo", "rank", "recombination_class", "regulatory_class",
+            "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq",
+            "satellite", "splices", "standard_name", "start_range", "tag"
+            "tissue-type", "transl_except", "transl_table","weighted_identity",
+        ],
+        axis=1,
+    )
 
     # Apply extract_hgnc_id function to create 'hgnc_id' column
-    gff_df['hgnc_id'] = gff_df['Dbxref'].apply(extract_hgnc_id)
+    gff_df["hgnc_id"] = gff_df["Dbxref"].apply(extract_hgnc_id)
 
     # set dtype for each column to reduce memory footprint
     dtype_mapping = {
-        'ID': 'category',
-        'transcript_id': 'str',
-        'hgnc_id': 'Int64',
+        "ID": "category",
+        "transcript_id": "str",
+        "hgnc_id": "Int64",
     }
 
     gff_df = gff_df.astype(dtype_mapping)
 
     # Filter GFF DataFrame to select entries with 'NM' type
-    transcripts_df = gff_df[gff_df['transcript_id'].str.startswith('NM_')]
+    transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
     return transcripts_df
 
 
@@ -197,9 +202,9 @@ def parse_annotation_tsv(path, gff_transcripts_df):
     """
     df = pd.read_csv(path, sep="\t")
     # Create masks for HGNC, Transcript, and Coordinates dataframes
-    hgnc_mask = df['ID'].str.startswith('HGNC:') | df['ID'].str.isnumeric()
-    transcript_mask = df['ID'].str.startswith('NM_')
-    coordinates_mask = df['ID'].str.startswith('chr')
+    hgnc_mask = df["ID"].str.startswith("HGNC:") | df["ID"].str.isnumeric()
+    transcript_mask = df["ID"].str.startswith("NM_")
+    coordinates_mask = df["ID"].str.startswith("chr")
 
     # Use masks to filter the original dataframe
     not_separated_rows = df[~(hgnc_mask | transcript_mask | coordinates_mask)]
@@ -217,71 +222,70 @@ def parse_annotation_tsv(path, gff_transcripts_df):
 
     # set dtype for each column
     dtype_mapping_hgnc = {
-        'ID': 'Int64',
-        'annotation': 'category',
+        "ID": "Int64",
+        "annotation": "category",
     }
 
     dtype_mapping_transcript = {
-        'ID': 'str',
-        'annotation': 'category',
+        "ID": "str",
+        "annotation": "category",
     }
 
     dtype_mapping_gff = {
-        'hgnc_id': 'Int64',
+        "hgnc_id": "Int64",
     }
 
     hgnc_df = hgnc_df.astype(dtype_mapping_hgnc)
     transcript_df = transcript_df.astype(dtype_mapping_transcript)
     gff_transcripts_df = gff_transcripts_df.astype(dtype_mapping_gff)
     # Rename columns for clarity
-    hgnc_df = hgnc_df.rename(columns={'ID': 'hgnc_id'})
-    transcript_df = transcript_df.rename(columns={'ID': 'transcript_id'})
-    coordinates_df = coordinates_df.rename(columns={'ID': 'Coordinates'})
+    hgnc_df = hgnc_df.rename(columns={"ID": "hgnc_id"})
+    transcript_df = transcript_df.rename(columns={"ID": "transcript_id"})
+    coordinates_df = coordinates_df.rename(columns={"ID": "Coordinates"})
 
     # Remove everything after '.' in the "transcript_id" column
-    gff_transcripts_df['transcript_id'] = gff_transcripts_df[
-        'transcript_id'].str.split('.').str[0]
-    transcript_df['transcript_id'] = transcript_df[
-        'transcript_id'].str.split('.').str[0]
+    gff_transcripts_df["transcript_id"] = (
+        gff_transcripts_df["transcript_id"].str.split(".").str[0]
+    )
+    transcript_df["transcript_id"] = (
+        transcript_df["transcript_id"].str.split(".").str[0]
+    )
 
     # Merge the HGNC and Transcript dataframes with gff dataframe based on the 'ID' column
-    merged_hgnc_df = gff_transcripts_df.merge(hgnc_df, on="hgnc_id",
-                                              how="inner")
-    merged_transcript_df = gff_transcripts_df.merge(transcript_df,
-                                                    on="transcript_id",
-                                                    how="inner")
+    merged_hgnc_df = gff_transcripts_df.merge(hgnc_df, on="hgnc_id", how="inner")
+    merged_transcript_df = gff_transcripts_df.merge(
+        transcript_df, on="transcript_id", how="inner"
+    )
 
     # Find the rows dropped during the merge
-    dropped_hgnc_rows = hgnc_df[
-        ~hgnc_df['hgnc_id'].isin(merged_hgnc_df['hgnc_id'])
-    ]
+    dropped_hgnc_rows = hgnc_df[~hgnc_df["hgnc_id"].isin(merged_hgnc_df["hgnc_id"])]
     dropped_transcript_rows = transcript_df[
-        ~transcript_df['transcript_id'].isin(merged_transcript_df['transcript_id'])
+        ~transcript_df["transcript_id"].isin(merged_transcript_df["transcript_id"])
     ]
     if not dropped_hgnc_rows.empty:
         print(f"Summary of dropped HGNC rows: \n {dropped_hgnc_rows}")
     else:
         print("All HGNC rows were merged successfully")
     if not dropped_transcript_rows.empty:
-        print(
-            f"Summary of dropped Transcript rows: \n {dropped_transcript_rows}")
+        print(f"Summary of dropped Transcript rows: \n {dropped_transcript_rows}")
     else:
         print("All Transcript rows were merged successfully")
     # Concatenate the merged dataframes
     final_df = pd.concat([merged_hgnc_df, merged_transcript_df])
 
-
     # Coordinates dataframe split into columns
     # Split the "Coordinates" column by ':' and '-'
-    coordinates_df[['chromosome', 'start', 'end']] = coordinates_df[
-        'Coordinates'].str.split('[:-]', expand=True)
-    coordinates_df['chromosome'] = coordinates_df['chromosome'].str.replace(
-        r'(?i)chr(omosome)?', '', regex=True
+    coordinates_df[["chromosome", "start", "end"]] = coordinates_df[
+        "Coordinates"
+    ].str.split("[:-]", expand=True)
+    coordinates_df["chromosome"] = coordinates_df["chromosome"].str.replace(
+        r"(?i)chr(omosome)?", "", regex=True
     )
     # Create the "gene" column with a placeholder since it's not present.
-    coordinates_df['gene'] = ''
-    coordinates_df = coordinates_df[['chromosome', 'start',
-                                     'end', 'annotation', 'gene']]
+    coordinates_df["gene"] = ""
+    coordinates_df = coordinates_df[
+        ["chromosome", "start", "end", "annotation", "gene"]
+    ]
 
     return final_df, coordinates_df
 
@@ -303,10 +307,10 @@ def extract_hgnc_id(dbxref_str):
     """
     if not dbxref_str:
         return None
-    parts = dbxref_str.split(',')
+    parts = dbxref_str.split(",")
     for part in parts:
-        if re.search(r'hgnc[:_][0-9]+', part, re.IGNORECASE):
-            return int(part.replace('_', ':').split(':')[-1])
+        if re.search(r"hgnc[:_][0-9]+", part, re.IGNORECASE):
+            return int(part.replace("_", ":").split(":")[-1])
     return None
 
 
@@ -326,11 +330,10 @@ def read_assembly_mapping(assembly_file):
         mapping of refseq accession to chromosome
     """
     accession_to_chromosome = {}
-    assembly_df = pd.read_csv(assembly_file, sep='\t',
-                              comment='#', header=None)
+    assembly_df = pd.read_csv(assembly_file, sep="\t", comment="#", header=None)
     assembly_df = assembly_df.dropna()  # Drop rows with missing values
     # filter out na from chromosome column and turn accession and chromosome columns to dict
-    assembly_df = assembly_df[~assembly_df[2].str.startswith('na')]
+    assembly_df = assembly_df[~assembly_df[2].str.startswith("na")]
     accession_to_chromosome = dict(zip(assembly_df[6], assembly_df[2]))
 
     return accession_to_chromosome
@@ -374,8 +377,7 @@ def parse_pickle(pickle_file):
         Contains only transcripts with NM_ prefix.
     """
     gff_df = pd.read_pickle(pickle_file)
-    transcripts_df = gff_df[gff_df['transcript_id'].fillna(
-        '').str.startswith('NM_')]
+    transcripts_df = gff_df[gff_df["transcript_id"].fillna("").str.startswith("NM_")]
     return transcripts_df
 
 
@@ -399,13 +401,14 @@ def merge_overlapping(bed_df):
     # This makes sure that overlapping regions are next to each other.
 
     bed_df = bed_df.sort_values(
-        by=["annotation", "chromosome", "start_flank", "end_flank"])
+        by=["annotation", "chromosome", "start_flank", "end_flank"]
+    )
     # Sort by first annotation then chromosome, start, and end.
     merged_rows = []
 
     current_row = bed_df.iloc[0]
     for _, row in bed_df.iterrows():
-        if row['annotation'] != current_row['annotation']:
+        if row["annotation"] != current_row["annotation"]:
             merged_rows.append(current_row)  # Append the merged row
             current_row = row  # Start a new potential merged row
             # Only rows with same annotation are merged
@@ -414,8 +417,7 @@ def merge_overlapping(bed_df):
             current_row = row
             # Only rows with same chromosome are merged.
         if row["start_flank"] <= current_row["end_flank"]:
-            current_row["end_flank"] = max(
-                current_row["end_flank"], row["end_flank"])
+            current_row["end_flank"] = max(current_row["end_flank"], row["end_flank"])
             # Extend the end if overlapping
         else:
             merged_rows.append(current_row)
@@ -457,8 +459,9 @@ def config_igv_report(args):
         f"Info columns: {info_columns}\nTitle: {title}\nOutput: {output_file}"
     )
 
-    igv.create_igv_report(bed_file, maf_file, genome, fasta_ref,
-                          info_columns, title, output_file)
+    igv.create_igv_report(
+        bed_file, maf_file, genome, fasta_ref, info_columns, title, output_file
+    )
 
     print("IGV report created successfully!")
 
@@ -482,8 +485,14 @@ def write_bed(annotation_df, coordinates_df, args) -> None:
     print("Adding flanking regions")
     annotation_df["start_flank"] = annotation_df["start"] - args.flanking
     annotation_df["end_flank"] = annotation_df["end"] + args.flanking
-    bed_columns = ["seq_id", "start_flank",
-                   "end_flank", "hgnc_id", "annotation", "gene"]
+    bed_columns = [
+        "seq_id",
+        "start_flank",
+        "end_flank",
+        "hgnc_id",
+        "annotation",
+        "gene",
+    ]
     bed_df = annotation_df[bed_columns]
     bed_df = bed_df.reindex()
     print(f"Summary of BED file df before collapsing \n {bed_df.head()}")
@@ -491,24 +500,21 @@ def write_bed(annotation_df, coordinates_df, args) -> None:
     accession_to_chromosome = read_assembly_mapping(args.assembly_summary)
     # Add a new column 'chromosome' by mapping accession to chromosome identifier
     bed_df.loc[:, "chromosome"] = bed_df["seq_id"].apply(
-        lambda x: map_accession_to_chromosome(x, accession_to_chromosome))
+        lambda x: map_accession_to_chromosome(x, accession_to_chromosome)
+    )
     print(f"Summary of BED file df before collapsing \n {bed_df.head()}")
 
     # # Merge overlapping entries
     collapsed_df = merge_overlapping(bed_df).reset_index(drop=True)
     print(f"Summary of BED file df after collapsing \n {collapsed_df.head()}")
     # Reorder the columns to match the BED format
-    cols = ['chromosome', 'start_flank', 'end_flank', 'annotation', 'gene']
+    cols = ["chromosome", "start_flank", "end_flank", "annotation", "gene"]
     collapsed_df = collapsed_df[cols]
     # Rename columns
-    new_column_names = {
-        "start_flank": "start",
-        "end_flank": "end"
-    }
+    new_column_names = {"start_flank": "start", "end_flank": "end"}
     collapsed_df.rename(columns=new_column_names, inplace=True)
     print(coordinates_df.head())
-    collapsed_df = pd.concat([collapsed_df, coordinates_df],
-                             axis=0, ignore_index=True)
+    collapsed_df = pd.concat([collapsed_df, coordinates_df], axis=0, ignore_index=True)
     print(collapsed_df.head(10))
     # Write the collapsed data to an output file
     output_file_name_maf = (
@@ -517,10 +523,8 @@ def write_bed(annotation_df, coordinates_df, args) -> None:
     output_file_name_bed = (
         f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
     )
-    collapsed_df.to_csv(output_file_name_maf, sep="\t",
-                        header=True, index=False)
-    collapsed_df.to_csv(output_file_name_bed, sep="\t",
-                        header=False, index=False)
+    collapsed_df.to_csv(output_file_name_maf, sep="\t", header=True, index=False)
+    collapsed_df.to_csv(output_file_name_bed, sep="\t", header=False, index=False)
 
 
 def main():
@@ -543,12 +547,14 @@ def main():
 
     # Read the annotation file into a pandas DataFrame
     if args.annotation_file:
-        annotation_df, coordinates_df = parse_annotation_tsv(args.annotation_file,
-                                                             transcripts_df)
+        annotation_df, coordinates_df = parse_annotation_tsv(
+            args.annotation_file, transcripts_df
+        )
     # Read the transcript annotation file
     elif args.transcript_file:
-        annotation_df, coordinates_df = parse_annotation_tsv(args.transcript_file,
-                                                             transcripts_df)
+        annotation_df, coordinates_df = parse_annotation_tsv(
+            args.transcript_file, transcripts_df
+        )
 
     # Merge NM entries with matching HGNC IDs
     print("Merging annotation and gff dataframes")
