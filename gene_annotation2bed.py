@@ -27,6 +27,10 @@ def parse_args() -> argparse.Namespace:
     """
     Parse command line arguments
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
     args : Namespace
@@ -70,7 +74,8 @@ def parse_args() -> argparse.Namespace:
 
 def parse_gff(gff_file):
     """
-    Summary: Import GFF3 file and convert to pandas DataFrame.
+    Import GFF3 file and convert to pandas DataFrame.
+
     The GFF3 file is imported into a dataframe and then all the attributes
     in the attributes column are split into seperate columns.
     It then drops many of the additional fields from the attributes column
@@ -186,19 +191,27 @@ def parse_gff(gff_file):
     return transcripts_df
 
 
-def parse_annotation_tsv(path, gff_transcripts_df):
+def parse_annotation_tsv(path: str,
+                         gff_transcripts_df: pd.DataFrame) -> tuple[pd.DataFrame,
+                                                                    pd.DataFrame]:
     """
-    _summary_
+    Parse an annotation TSV file and separate it into dataframes for HGNC IDs,
+    Transcript IDs, and Coordinates, then merge them with a GFF dataframe.
 
     Parameters
     ----------
-    path : _type_
-        _description_
+    path : str
+        The file path to the TSV annotation file.
+    gff_transcripts_df : pd.DataFrame
+        A dataframe containing GFF information including transcript IDs.
 
     Returns
     -------
-    annotation_dataframe for HGNC_ids and transcripts.
-    coordinated dataframe for coordinates to be appended to bed later.
+    Tuple[pd.DataFrame, pd.DataFrame]
+        A tuple containing two dataframes:
+        1. The merged dataframe for HGNC IDs and transcripts. (hgnc_merged_df)
+        2. The coordinated dataframe for coordinates to be appended
+           to a BED file later (coordinates_df).
     """
     df = pd.read_csv(path, sep="\t")
     # Create masks for HGNC, Transcript, and Coordinates dataframes
@@ -271,7 +284,7 @@ def parse_annotation_tsv(path, gff_transcripts_df):
     else:
         print("All Transcript rows were merged successfully")
     # Concatenate the merged dataframes
-    final_df = pd.concat([merged_hgnc_df, merged_transcript_df])
+    hgnc_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
 
     # Coordinates dataframe split into columns
     # Split the "Coordinates" column by ':' and '-'
@@ -287,10 +300,10 @@ def parse_annotation_tsv(path, gff_transcripts_df):
         ["chromosome", "start", "end", "annotation", "gene"]
     ]
 
-    return final_df, coordinates_df
+    return hgnc_merged_df, coordinates_df
 
 
-def extract_hgnc_id(dbxref_str):
+def extract_hgnc_id(dbxref_str: str):
     """
     Wrapper function to extract HGNC ID from a string of dbxrefs.
 
@@ -314,14 +327,14 @@ def extract_hgnc_id(dbxref_str):
     return None
 
 
-def read_assembly_mapping(assembly_file):
+def read_assembly_mapping(assembly_file: str):
     """
     Reads in the associated assembly file and returns a dictionary mapping
     to find chromosome for each refseq accession.
 
     Parameters
     ----------
-    assembly_file : tsv
+    assembly_file : str (file path to tsv)
         found at: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.25_GRCh37.p13/
 
     Returns
@@ -339,7 +352,7 @@ def read_assembly_mapping(assembly_file):
     return accession_to_chromosome
 
 
-def map_accession_to_chromosome(accession, accession_to_chromosome):
+def map_accession_to_chromosome(accession: str, accession_to_chromosome: dict):
     """
     Simple mapping function to find chromosome for a given refseq accession.
     Calls the accession_to_chromosome dictionary and extracts the chromosome.
@@ -360,13 +373,13 @@ def map_accession_to_chromosome(accession, accession_to_chromosome):
     return accession_to_chromosome.get(accession, f"Unknown - {accession}")
 
 
-def parse_pickle(pickle_file):
+def parse_pickle(pickle_file: str):
     """
     Parses a pickle file and returns a DataFrame of transcripts.
 
     Parameters
     ----------
-    pickle_file : pkl
+    pickle_file : str (path to Pickle file)
         pickle file of a GFF DataFrame once parsed
         with columns from attributes_to_columns
 
@@ -381,7 +394,7 @@ def parse_pickle(pickle_file):
     return transcripts_df
 
 
-def merge_overlapping(bed_df):
+def merge_overlapping(bed_df: pd.DataFrame):
     """
     Function to merge overlapping regions in a bed file by annotation.
 
@@ -428,7 +441,7 @@ def merge_overlapping(bed_df):
     return merged_df
 
 
-def config_igv_report(args):
+def config_igv_report(args: argparse.Namespace):
     """
     Function to call igv report script with the correct parameters.
     Generates an IGV html report using generic handling.
@@ -466,19 +479,25 @@ def config_igv_report(args):
     print("IGV report created successfully!")
 
 
-def write_bed(annotation_df, coordinates_df, args) -> None:
+def write_bed(annotation_df: pd.DataFrame,
+              coordinates_df: pd.DataFrame,
+              args: argparse.Namespace) -> None:
     """
     Combines dataframes, extracts chromosome for HGNC_ids,
     and writes to MAF & BED file for IGV visualisation and VEP annotation.
 
     Parameters
     ----------
-    annotation_df : _type_
-        _description_
-    coordinates_df : _type_
-        _description_
-    args : _type_
-        _description_
+    annotation_df : pd.DataFrame
+        A dataframe containing annotation information.
+    coordinates_df : pd.DataFrame
+        A dataframe containing coordinates information.
+    args : Namespace
+        A namespace containing command-line arguments and options.
+
+    Returns
+    -------
+    None
     """
     # Create BED file with flanking regions
     print("Creating BED file")

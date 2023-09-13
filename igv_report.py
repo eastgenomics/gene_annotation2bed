@@ -2,7 +2,10 @@ import json
 import subprocess
 
 
-def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, title, output_file):
+def create_igv_report(bed_file: str, maf_file: str,
+                      genome: str, reference_file: str,
+                      info_columns: list, title: str,
+                      output_file: str) -> None:
     """
     Create an IGV report from a bed file.
     Parameters
@@ -20,8 +23,9 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
 
     Returns
     -------
+    None.
     Prints the standard output and error of the subprocess.
-    Creates an IGV report.
+    Creates an IGV report file.
     """
     tracks_config = [
         {
@@ -87,8 +91,8 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
 
 
 if __name__ == "__main__":
-    bed_file = "data/test.maflite.maf"
-    genome = "hg19"
-    title = f"TEST"
-    output = "test.html"
+    bed_file_str = "data/test.maflite.maf"
+    genome_str = "hg19"
+    title_str = f"TEST"
+    output_str = "test.html"
     create_igv_report(bed_file, genome, title, output)
