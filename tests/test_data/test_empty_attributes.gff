@@ -1,0 +1,11 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+#!genome-build GRCh37.p13
+#!genome-build-accession NCBI_Assembly:GCF_000001405.25
+#!annotation-date 03/07/2022
+#!annotation-source NCBI Homo sapiens Updated Annotation Release 105.20220307
+##sequence-region NC_000001.10 1 249250621
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+NC_000001.10	BestRefSeq	pseudogene	14362	29370	.	-	.	
+NC_000001.10	BestRefSeq	transcript	14362	29370	.	-	.	
