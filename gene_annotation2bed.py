@@ -53,7 +53,8 @@ def parse_args() -> argparse.Namespace:
         "-o", "--output_file_suffix", help="Output file suffix", required=True
     )
     parser.add_argument(
-        "-ref", "--reference_genome", help="Reference genome (hg19/hg38)", required=True
+        "-ref", "--reference_genome", help="Reference genome (hg19/hg38)",
+        required=True, choices=('hg19', 'hg38')
     )
     parser.add_argument(
         "-fasta",
@@ -69,6 +70,7 @@ def parse_args() -> argparse.Namespace:
     # parser.add_argument('--report_name', help="Name for report")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
+
     return args
 
 
@@ -152,7 +154,7 @@ def parse_gff(gff_file):
     # drop columns that are not needed to reduce memory footprint
     gff_df = gff_df.drop(
         [
-            "Gap","Is_circular", "Name", "Note", "Parent", "Target", "anticodon",
+            "Gap", "Is_circular", "Name", "Note", "Parent", "Target", "anticodon",
             "assembly_bases_aln", "assembly_bases_seq", "bit_score", "blast_aligner",
             "blast_score", "bound_moiety", "chromosome", "codons", "common_component",
             "consensus_splices", "country", "description", "direction", "e_value",
@@ -169,7 +171,7 @@ def parse_gff(gff_file):
             "pseudo", "rank", "recombination_class", "regulatory_class",
             "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq",
             "satellite", "splices", "standard_name", "start_range", "tag"
-            "tissue-type", "transl_except", "transl_table","weighted_identity",
+            "tissue-type", "transl_except", "transl_table", "weighted_identity",
         ],
         axis=1,
     )
@@ -189,6 +191,80 @@ def parse_gff(gff_file):
     # Filter GFF DataFrame to select entries with 'NM' type
     transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
     return transcripts_df
+
+
+def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert coordinates dataframe to BED format.
+
+    Parameters
+    ----------
+    coordinates_df : pd.DataFrame
+        coordinate format provided by the annotation file.
+        ID                  annotation
+        chr1:11874-14409    promoter_of_interest
+
+    Returns
+    -------
+    pd.DataFrame
+        Bed format dataframe with columns: chromosome, start,
+            end, annotation, gene.
+
+        +------------------+----------------------+
+        |        ID        |      annotation      |
+        +------------------+----------------------+
+        | chr1:11874-14409 | promoter_of_interest |
+        +------------------+----------------------+
+
+                           |
+                           |
+                           V
+
+    +------------+-------+-------+----------------------+
+    | chromosome | start |  end  |      annotation      |
+    +------------+-------+-------+----------------------+
+    | chr1       | 11874 | 14409 | promoter_of_interest |
+    +------------+-------+-------+----------------------+
+    """
+    # If the "Coordinates" column is empty, return an empty dataframe:
+    if coordinates_df.empty:
+        # Define the columns and their corresponding data types
+
+        # Create an empty DataFrame with specified columns and data types
+        empty_df = pd.DataFrame(
+            columns=["chromosome", "start", "end", "annotation", "gene"])
+        print("No Coordinates found in the annotation file.")
+        return empty_df
+
+    # create columns
+    coordinates_df[["chr", "start", "end", "gene"]] = ""
+
+    try:
+        # Split the "Coordinates" column by ':' and '-'
+        coordinates_df[["chromosome", "start", "end"]] = coordinates_df[
+            "Coordinates"
+        ].str.split("[:-]", expand=True)
+        coordinates_df["chromosome"] = coordinates_df["chromosome"].str.replace(
+            r"(?i)chr(omosome)?", "", regex=True
+        )
+        coordinates_df = coordinates_df[
+            ["chromosome", "start", "end", "annotation", "gene"]
+        ]
+
+    except Exception as err:
+        print(f"Error: {err}")
+        print("Please check the format of the coordinates in the annotation file.")
+        empty_df = pd.DataFrame(
+            columns=["chromosome", "start", "end", "annotation", "gene"])
+        return empty_df
+
+    try:
+        coordinates_df["start"] = coordinates_df["start"].astype('int64')
+        coordinates_df["end"] = coordinates_df["end"].astype('int64')
+    except ValueError as e:
+        print(f"Error: {e}")
+    
+    return coordinates_df
 
 
 def parse_annotation_tsv(path: str,
@@ -216,8 +292,11 @@ def parse_annotation_tsv(path: str,
     df = pd.read_csv(path, sep="\t")
     # Create masks for HGNC, Transcript, and Coordinates dataframes
     hgnc_mask = df["ID"].str.startswith("HGNC:") | df["ID"].str.isnumeric()
-    transcript_mask = df["ID"].str.startswith("NM_")
-    coordinates_mask = df["ID"].str.startswith("chr")
+    # Use regex to match transcript IDs/chromosome coordinates
+    pattern_nm = r'^NM'
+    transcript_mask = df["ID"].str.contains(pattern_nm, case=False)
+    pattern_chr = r'^(chr|chromosome)'
+    coordinates_mask = df["ID"].str.contains(pattern_chr, case=False)
 
     # Use masks to filter the original dataframe
     not_separated_rows = df[~(hgnc_mask | transcript_mask | coordinates_mask)]
@@ -232,7 +311,7 @@ def parse_annotation_tsv(path: str,
     hgnc_df = df[hgnc_mask]
     transcript_df = df[transcript_mask]
     coordinates_df = df[coordinates_mask]
-
+    print(coordinates_df)
     # set dtype for each column
     dtype_mapping_hgnc = {
         "ID": "Int64",
@@ -265,40 +344,33 @@ def parse_annotation_tsv(path: str,
     )
 
     # Merge the HGNC and Transcript dataframes with gff dataframe based on the 'ID' column
-    merged_hgnc_df = gff_transcripts_df.merge(hgnc_df, on="hgnc_id", how="inner")
+    merged_hgnc_df = gff_transcripts_df.merge(
+        hgnc_df, on="hgnc_id", how="inner")
     merged_transcript_df = gff_transcripts_df.merge(
         transcript_df, on="transcript_id", how="inner"
     )
 
     # Find the rows dropped during the merge
-    dropped_hgnc_rows = hgnc_df[~hgnc_df["hgnc_id"].isin(merged_hgnc_df["hgnc_id"])]
+    dropped_hgnc_rows = hgnc_df[~hgnc_df["hgnc_id"].isin(
+        merged_hgnc_df["hgnc_id"])]
     dropped_transcript_rows = transcript_df[
-        ~transcript_df["transcript_id"].isin(merged_transcript_df["transcript_id"])
+        ~transcript_df["transcript_id"].isin(
+            merged_transcript_df["transcript_id"])
     ]
     if not dropped_hgnc_rows.empty:
         print(f"Summary of dropped HGNC rows: \n {dropped_hgnc_rows}")
     else:
         print("All HGNC rows were merged successfully")
     if not dropped_transcript_rows.empty:
-        print(f"Summary of dropped Transcript rows: \n {dropped_transcript_rows}")
+        print(
+            f"Summary of dropped Transcript rows: \n {dropped_transcript_rows}")
     else:
         print("All Transcript rows were merged successfully")
     # Concatenate the merged dataframes
     hgnc_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
 
     # Coordinates dataframe split into columns
-    # Split the "Coordinates" column by ':' and '-'
-    coordinates_df[["chromosome", "start", "end"]] = coordinates_df[
-        "Coordinates"
-    ].str.split("[:-]", expand=True)
-    coordinates_df["chromosome"] = coordinates_df["chromosome"].str.replace(
-        r"(?i)chr(omosome)?", "", regex=True
-    )
-    # Create the "gene" column with a placeholder since it's not present.
-    coordinates_df["gene"] = ""
-    coordinates_df = coordinates_df[
-        ["chromosome", "start", "end", "annotation", "gene"]
-    ]
+    coordinates_df = convert_coordinates(coordinates_df)
 
     return hgnc_merged_df, coordinates_df
 
@@ -343,7 +415,8 @@ def read_assembly_mapping(assembly_file: str):
         mapping of refseq accession to chromosome
     """
     accession_to_chromosome = {}
-    assembly_df = pd.read_csv(assembly_file, sep="\t", comment="#", header=None)
+    assembly_df = pd.read_csv(assembly_file, sep="\t",
+                              comment="#", header=None)
     assembly_df = assembly_df.dropna()  # Drop rows with missing values
     # filter out na from chromosome column and turn accession and chromosome columns to dict
     assembly_df = assembly_df[~assembly_df[2].str.startswith("na")]
@@ -390,7 +463,8 @@ def parse_pickle(pickle_file: str):
         Contains only transcripts with NM_ prefix.
     """
     gff_df = pd.read_pickle(pickle_file)
-    transcripts_df = gff_df[gff_df["transcript_id"].fillna("").str.startswith("NM_")]
+    transcripts_df = gff_df[gff_df["transcript_id"].fillna(
+        "").str.startswith("NM_")]
     return transcripts_df
 
 
@@ -430,7 +504,8 @@ def merge_overlapping(bed_df: pd.DataFrame):
             current_row = row
             # Only rows with same chromosome are merged.
         if row["start_flank"] <= current_row["end_flank"]:
-            current_row["end_flank"] = max(current_row["end_flank"], row["end_flank"])
+            current_row["end_flank"] = max(
+                current_row["end_flank"], row["end_flank"])
             # Extend the end if overlapping
         else:
             merged_rows.append(current_row)
@@ -523,7 +598,7 @@ def write_bed(annotation_df: pd.DataFrame,
     )
     print(f"Summary of BED file df before collapsing \n {bed_df.head()}")
 
-    # # Merge overlapping entries
+    # Merge overlapping entries
     collapsed_df = merge_overlapping(bed_df).reset_index(drop=True)
     print(f"Summary of BED file df after collapsing \n {collapsed_df.head()}")
     # Reorder the columns to match the BED format
@@ -533,7 +608,8 @@ def write_bed(annotation_df: pd.DataFrame,
     new_column_names = {"start_flank": "start", "end_flank": "end"}
     collapsed_df.rename(columns=new_column_names, inplace=True)
     print(coordinates_df.head())
-    collapsed_df = pd.concat([collapsed_df, coordinates_df], axis=0, ignore_index=True)
+    collapsed_df = pd.concat(
+        [collapsed_df, coordinates_df], axis=0, ignore_index=True)
     print(collapsed_df.head(10))
     # Write the collapsed data to an output file
     output_file_name_maf = (
@@ -542,8 +618,10 @@ def write_bed(annotation_df: pd.DataFrame,
     output_file_name_bed = (
         f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
     )
-    collapsed_df.to_csv(output_file_name_maf, sep="\t", header=True, index=False)
-    collapsed_df.to_csv(output_file_name_bed, sep="\t", header=False, index=False)
+    collapsed_df.to_csv(output_file_name_maf, sep="\t",
+                        header=True, index=False)
+    collapsed_df.to_csv(output_file_name_bed, sep="\t",
+                        header=False, index=False)
 
 
 def main():
