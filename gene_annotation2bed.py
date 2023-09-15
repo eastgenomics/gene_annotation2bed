@@ -259,8 +259,8 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         return empty_df
 
     try:
-        coordinates_df["start"] = coordinates_df["start"].astype('int64')
-        coordinates_df["end"] = coordinates_df["end"].astype('int64')
+        coordinates_df["start"] = coordinates_df["start"].astype('Int64')
+        coordinates_df["end"] = coordinates_df["end"].astype('Int64')
     except ValueError as e:
         print(f"Error: {e}")
     
@@ -389,14 +389,31 @@ def extract_hgnc_id(dbxref_str: str):
     int | None
         HGNC ID as an integer i.e. 427 for HGNC:427.
         Returns None if no HGNC ID found.
+        
+    Raises
+    ------
+    ValueError
+        If more than one HGNC ID is found in the input string.
     """
     if not dbxref_str:
         return None
     parts = dbxref_str.split(",")
+    hgnc_ids = []
     for part in parts:
-        if re.search(r"hgnc[:_][0-9]+", part, re.IGNORECASE):
-            return int(part.replace("_", ":").split(":")[-1])
-    return None
+        match = re.search(r"hgnc[:_][0-9]+", part, re.IGNORECASE)
+        if match:
+            hgnc_id = int(match.group().replace("_", ":").split(":")[-1])
+            hgnc_ids.append(hgnc_id)
+    try:
+        if len(hgnc_ids) > 1:
+            raise ValueError("Multiple HGNC IDs found: " + ", ".join(map(str, hgnc_ids)))
+        elif hgnc_ids:
+            return hgnc_ids[0]
+        else:
+            return None
+    except ValueError as e:
+        print(f"Error: {e}")
+        return hgnc_ids[0]
 
 
 def read_assembly_mapping(assembly_file: str):

@@ -41,8 +41,7 @@ class TestExtractHGNCID(unittest.TestCase):
         Checking the passing of HGNC IDs when multiple are found.
         Currently this passes and selects the first.
         Only one HGNC ID should be found per gene.
-        Maybe an error should be raised instead.
-        TODO: review if this is the desired behaviour.
+        Should raise an error but take first HGNC_id.
         """
         attributes_str = "Dbxref=GeneID:123,HGNC:456,HGNC:789"
         result = extract_hgnc_id(attributes_str)
