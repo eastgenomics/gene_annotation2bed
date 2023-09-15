@@ -1,7 +1,6 @@
 import pandas as pd
 import unittest
 import sys
-from io import StringIO
 
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
