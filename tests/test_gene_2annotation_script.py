@@ -3,6 +3,8 @@ Unit tests for gene_2annotation.py
 Tests for gene_annotation2bed.py functions
 - convert_coordinates
 - extract_hgnc_id
+
+Run: python -m pytest -v tests/test_gene_2annotation_script.py
 """
 import sys
 from io import StringIO
@@ -67,7 +69,8 @@ class TestConvertCoordinates(unittest.TestCase):
             "gene": ["", ""]
         }
         expected_df = pd.DataFrame(expected_data)
-        pd.testing.assert_frame_equal(result_df, expected_df, check_dtype=False)
+        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+        pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_convert_coordinates_empty(self):
         # Test when input DataFrame is empty
@@ -93,6 +96,8 @@ class TestConvertCoordinates(unittest.TestCase):
             "gene": ["", ""]
         }
         expected_df = pd.DataFrame(expected_data)
+        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_convert_coordinates_different_spellings_of_chr(self):
@@ -111,6 +116,8 @@ class TestConvertCoordinates(unittest.TestCase):
             "gene": ["", ""]
         }
         expected_df = pd.DataFrame(expected_data)
+        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_convert_coordinates_large_numbers(self):
@@ -129,6 +136,8 @@ class TestConvertCoordinates(unittest.TestCase):
             "gene": [""]
         }
         expected_df = pd.DataFrame(expected_data)
+        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+
         pd.testing.assert_frame_equal(result_df, expected_df)
 
 if __name__ == '__main__':
