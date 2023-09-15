@@ -16,6 +16,37 @@ sys.path.append('../gene_annotation2bed')
 from gene_annotation2bed import convert_coordinates, extract_hgnc_id
 
 
+class TestExtractHGNCID(unittest.TestCase):
+    def test_extract_hgnc_id_found(self):
+        """
+        Testing the extraction of HGNC ID from the attributes string.
+        Using the extract_hgnc_id function.
+        """
+        attributes_str = "Dbxref=GeneID:123,HGNC:456"
+        result = extract_hgnc_id(attributes_str)
+        self.assertEqual(result, 456)
+
+    def test_extract_hgnc_id_not_found(self):
+        """
+        Testing the extraction of HGNC ID when no HGNC ID is found.
+        """
+        attributes_str = "Dbxref=GeneID:123"
+        result = extract_hgnc_id(attributes_str)
+        self.assertIsNone(result)
+
+    def test_extract_hgnc_id_multiple_entries(self):
+        """
+        Checking the passing of HGNC IDs when multiple are found.
+        Currently this passes and selects the first.
+        Only one HGNC ID should be found per gene.
+        Maybe an error should be raised instead.
+        TODO: review if this is the desired behaviour.
+        """
+        attributes_str = "Dbxref=GeneID:123,HGNC:456,HGNC:789"
+        result = extract_hgnc_id(attributes_str)
+        self.assertEqual(result, 456)
+
+
 class TestConvertCoordinates(unittest.TestCase):
 
     def test_convert_coordinates(self):
