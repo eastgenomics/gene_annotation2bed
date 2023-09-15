@@ -47,7 +47,9 @@ def create_igv_report(bed_file: str, maf_file: str,
     # Writing to sample.json
     with open("tracks_config.json", "w") as outfile:
         outfile.write(tracks_json)
-
+    sort_result = subprocess.run(["sort", "-k1,1", "-k2,2n", "-k3,3n", bed_file])
+    print("Standard Output:", sort_result.stdout)
+    print("Standard Error:", sort_result.stderr)
     bgzip_result = subprocess.run(["bgzip", bed_file])
     print(bgzip_result.returncode)
     print("Standard Output:", bgzip_result.stdout)
