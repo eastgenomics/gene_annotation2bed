@@ -34,7 +34,7 @@ def read_gff3(input_file):
 
 def _split_atts(atts):
     """Split a feature string into attributes."""
-    if atts is None:
+    if not atts:
         return {}
     try:
         splits_list = [a.split("=") for a in atts.split(";") if "=" in a]
