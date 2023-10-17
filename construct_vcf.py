@@ -108,9 +108,9 @@ def fetch_nucleotides(row, reference_path, variant_dict):
     start_seq = pysam.faidx(reference_path,
                             f"{ncbi_chr}:{start}-{start}")
     middle_seq = pysam.faidx(reference_path,
-                            f"{ncbi_chr}:{middle}-{middle}")
+                             f"{ncbi_chr}:{middle}-{middle}")
     end_seq = pysam.faidx(reference_path,
-                            f"{ncbi_chr}:{end}-{end}")
+                          f"{ncbi_chr}:{end}-{end}")
     start_nuc = start_seq.splitlines()[1]
     middle_nuc = middle_seq.splitlines()[1]
     end_nuc = end_seq.splitlines()[1]
@@ -151,13 +151,16 @@ def main():
     variant_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'A'}
 
     # Define the output dataframe columns
-    columns = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', 'test-123456-1-DNA-egg6.bam']
+    columns = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL',
+               'FILTER', 'INFO', 'FORMAT', 'test-123456-1-DNA-egg6.bam']
 
     # Initialize an empty list to store the rows of the output dataframe
-    reference_path = args.reference_file  # "/home/rswilson1/Documents/MSC_dissertation/MELT_example_data/hs37d5.fa"
+    # "/home/rswilson1/Documents/MSC_dissertation/MELT_example_data/hs37d5.fa"
+    reference_path = args.reference_file
 
-    #Fetch the nucleotide sequence from NCBI using the fetch_nucleotides function
+    # Fetch the nucleotide sequence from NCBI using the fetch_nucleotides function
     output_df = pd.DataFrame(columns=columns)
+
     for i, row in bed_file.iterrows():
         # Fetch the nucleotide sequence from NCBI using the fetch_nucleotides function
         seq_df = fetch_nucleotides(row, reference_path, variant_dict)
