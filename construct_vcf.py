@@ -19,24 +19,71 @@
 
 import pandas as pd
 import pysam
+import argparse
 
 
-def fetch_nucleotides(row, reference_path):
+def parse_args() -> argparse.Namespace:
     """
-    This function fetches the nucleotide sequence from a reference database using the
-    chromosome, start, and end positions in a row of a dataframe.
+    Parse command line arguments
 
-    Parameters:
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    args : Namespace
+        Namespace of passed command line argument inputs
+    """
+    parser = argparse.ArgumentParser(description="GFF Processing Script")
+    parser.add_argument(
+        "-b", "--bed_file", help="BED file to be converted to VCF",
+        required=True
+    )
+    parser.add_argument(
+        "-ref", "--reference_genome", help="Reference genome (hg19/hg38)",
+        required=False, choices=('hg19', 'hg38')
+    )
+    parser.add_argument(
+        "-fasta",
+        "--reference_file",
+        help="Path to Reference genome fasta file for igv_reports",
+        required=True,
+    )
+    parser.add_argument(
+        "-o",
+        "--output_file",
+        help="Path to output file",
+        required=True,
+    )
+
+    args = parser.parse_args()
+    return args
+
+
+def fetch_nucleotides(row, reference_path, variant_dict):
+    """
+    Fetches the nucleotide sequence from a reference database using the chromosome,
+    start, and end positions in a row of a dataframe.
+
+    Parameters
+    ----------
     row (pandas.Series): A row of a pandas dataframe containing the chromosome,
-    start, and end positions of the nucleotide sequence to fetch.
+        start, and end positions of the nucleotide sequence to fetch.
 
-    Returns:
+    reference_path (str): The path to the reference genome database.
+
+    variant_dict (dict): A dictionary containing the reference nucleotide as the key
+        and the corresponding alternate nucleotide as the value.
+
+    Returns
+    -------
     pandas.DataFrame: A dataframe containing the variant information for the start,
-    middle, and end positions in the format specified by a VCF file.
+        middle, and end positions in the format specified by a VCF file.
     """
 
     # Define the chromosome number and NCBI identifier
-    chr = str(row['chr'])  #.strip('chr')
+    chr = str(row['chr']).strip('chr')
     if chr == 'X':
         ncbi_chr = 'X'
     elif chr == 'Y':
@@ -51,13 +98,10 @@ def fetch_nucleotides(row, reference_path):
     start = int(row['start']) + 1
     end = int(row['end'])
     middle = int((start + end) / 2)
-    role_in_cancer = row['role_in_cancer']
-    INFO_col = f"DP=268;ROLE={role_in_cancer}"
+    INFO_field = row['info']
+    INFO_col = f"DP=268;{INFO_field}"
     FORMAT = f"GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ"
     SAMPLE_col = f"1/1:0:0,114:114:1:65:-100:0.2192:27,12,16,14,23,22,27,12,16,14,23,22:100:100"
-
-    # Variant dictionary to convert ref to alt
-    variant_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'A'}
 
     # Fetch the start nucleotide from reference
     print(f"Fetching nucleotide sequence for {ncbi_chr}:{start}-{end}...")
@@ -82,67 +126,45 @@ def fetch_nucleotides(row, reference_path):
             'ID': ['.', '.', '.'],
             'REF': [start_nuc, middle_nuc, end_nuc],
             'ALT': [start_nuc_variant, middle_nuc_variant, end_nuc_variant],
-            'QUAL': ['.', '.', '.'],
-            'FILTER': ['.', '.', '.'],
+            'QUAL': [100, 100, 100],
+            'FILTER': ['PASS', 'PASS', 'PASS'],
             'INFO': [INFO_col, INFO_col, INFO_col],
             'FORMAT': [FORMAT, FORMAT, FORMAT],
-            'SAMPLE_col': [SAMPLE_col, SAMPLE_col, SAMPLE_col]
+            'test-123456-1-DNA-egg6.bam': [SAMPLE_col, SAMPLE_col, SAMPLE_col]
             }
 
     vcf_df = pd.DataFrame(data)
+
     return vcf_df
 
 
 def main():
     """
-    _summary_
+    Main function to run the script
     """
-    header = ['chr', 'start', 'end', 'role_in_cancer', 'gene']
-    bed_file = pd.read_csv('output_hg19_overlap_test5.bed', names=header, sep='\t')
+    args = parse_args()
+    header = ['chr', 'start', 'end', 'info', 'gene']
+    bed_file_path = args.bed_file
+    bed_file = pd.read_csv(bed_file_path, names=header, sep='\t')
 
-    # # Define the variant dictionary to convert ref to alt
-    # variant_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'A'}
+    # Define the variant dictionary to convert ref to alt
+    variant_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'A'}
 
     # Define the output dataframe columns
     columns = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', 'test-123456-1-DNA-egg6.bam']
 
     # Initialize an empty list to store the rows of the output dataframe
-    rows = []
-    reference_path = "/home/rswilson1/Documents/MSC_dissertation/MELT_example_data/hs37d5.fa"
-    # Loop through each row of the input dataframe
-    counter = 0
+    reference_path = args.reference_file  # "/home/rswilson1/Documents/MSC_dissertation/MELT_example_data/hs37d5.fa"
+
+    #Fetch the nucleotide sequence from NCBI using the fetch_nucleotides function
+    output_df = pd.DataFrame(columns=columns)
     for i, row in bed_file.iterrows():
         # Fetch the nucleotide sequence from NCBI using the fetch_nucleotides function
-        seq_df = fetch_nucleotides(row, reference_path)
-        # Iterate through the rows of the seq_df to create the output dataframe rows
-        for j, seq_row in seq_df.iterrows():
-            # Define the output dataframe row as a dictionary
-            counter += 1
-            output_row = {
-                '#CHROM': seq_row['#CHROM'],
-                'POS': seq_row['POS'],
-                'ID': counter,
-                'REF': str(seq_row['REF']),
-                'ALT': seq_row['ALT'],
-                'QUAL': 100,
-                'FILTER': 'PASS',
-                'INFO': seq_row['INFO'],
-                'FORMAT': seq_row['FORMAT'],
-                'test-123456-1-DNA-egg6.bam': str(seq_row['SAMPLE_col'])
-            }
-
-            # Append the output dataframe row to the rows list
-            rows.append(output_row)
-
-    # Create the output dataframe from the rows list
-    output_df = pd.DataFrame(rows, columns=columns)
-    # Print the output dataframe
-    print(output_df.head(10))
+        seq_df = fetch_nucleotides(row, reference_path, variant_dict)
+        output_df = pd.concat([output_df, seq_df])
 
     # saving as tsv file
-    output_df.to_csv('test.vcf', sep="\t", index=False)
-
-    # test_vcf_cancer_TSG_V4.vcf -- 0-based coordinates
+    output_df.to_csv(args.output_file, sep="\t", index=False)
 
 
 if __name__ == "__main__":
