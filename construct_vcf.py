@@ -104,7 +104,7 @@ def fetch_nucleotides(row, reference_path, variant_dict):
     FORMAT = f"GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ"
     SAMPLE_col = ("1/1:0:0,114:114:1:65:-100:0.2192:"
                   "27,12,16,14,23,22,27,12,16,14,23,22:100:100"
-                )
+                 )
 
     # Fetch the start nucleotide from reference
     print(f"Fetching nucleotide sequence for {ncbi_chr}:{start}-{end}...")
