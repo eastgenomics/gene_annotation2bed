@@ -263,7 +263,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         coordinates_df["end"] = coordinates_df["end"].astype('Int64')
     except ValueError as e:
         print(f"Error: {e}")
-    
+
     return coordinates_df
 
 
@@ -389,7 +389,7 @@ def extract_hgnc_id(dbxref_str: str):
     int | None
         HGNC ID as an integer i.e. 427 for HGNC:427.
         Returns None if no HGNC ID found.
-        
+
     Raises
     ------
     ValueError
@@ -587,9 +587,10 @@ def write_bed(annotation_df: pd.DataFrame,
     args : Namespace
         A namespace containing command-line arguments and options.
 
-    Returns
+    Outputs
     -------
-    None
+    bed file: (file) bed file containing the relevant transcripts
+        for annotation for visualisation in igv.
     """
     # Create BED file with flanking regions
     print("Creating BED file")
