@@ -17,8 +17,8 @@ Custom script for processing a list of ids (HGNC, transcript) or coordinates wit
 
 ## IGV reports output
 
-Example Output:
-[!image] (<https://raw.githubusercontent.com/eastgenomics/gene_annotation2bed/dev/data/demo/demo_igv_reports.png>)
+IGV report:
+![image](<https://raw.githubusercontent.com/eastgenomics/gene_annotation2bed/dev/data/demo/demo_igv_reports.png>)
 
 The script produces a HTML report of all the bed file entries. Displayed in IGV with the refseq track
 and bed file aligned with the respecive annotation.

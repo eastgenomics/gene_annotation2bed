@@ -8,6 +8,7 @@
     separate columns for a pandas dataframe.
 
     Changes made:
+    _split_atts function modified with try/except to handle AttributeError.
     Line 64: dtype of start and end changed to np.uint32
         dtype={
         "seq_id": str,
@@ -23,7 +24,6 @@
 """
 
 import itertools
-
 import pandas as pd
 import numpy as np
 
@@ -34,8 +34,14 @@ def read_gff3(input_file):
 
 def _split_atts(atts):
     """Split a feature string into attributes."""
-    splits_list = [a.split("=") for a in atts.split(";") if "=" in a]
-    return {item[0]: "=".join(item[1:]) for item in splits_list}
+    if not atts:
+        return {}
+    try:
+        splits_list = [a.split("=") for a in atts.split(";") if "=" in a]
+        return {item[0]: "=".join(item[1:]) for item in splits_list}
+    except AttributeError:
+        # Handle the case when atts has no 'split' attribute
+        return {}
 
 
 class Gff3DataFrame(object):

@@ -2,7 +2,10 @@ import json
 import subprocess
 
 
-def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, title, output_file):
+def create_igv_report(bed_file: str, maf_file: str,
+                      genome: str, reference_file: str,
+                      info_columns: list, title: str,
+                      output_file: str) -> None:
     """
     Create an IGV report from a bed file.
     Parameters
@@ -20,8 +23,9 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
 
     Returns
     -------
+    None.
     Prints the standard output and error of the subprocess.
-    Creates an IGV report.
+    Creates an IGV report file.
     """
     tracks_config = [
         {
@@ -43,7 +47,9 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
     # Writing to sample.json
     with open("tracks_config.json", "w") as outfile:
         outfile.write(tracks_json)
-
+    sort_result = subprocess.run(["sort", "-k1,1", "-k2,2n", "-k3,3n", bed_file])
+    print("Standard Output:", sort_result.stdout)
+    print("Standard Error:", sort_result.stderr)
     bgzip_result = subprocess.run(["bgzip", bed_file])
     print(bgzip_result.returncode)
     print("Standard Output:", bgzip_result.stdout)
@@ -53,6 +59,7 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
     print("Standard Output:", index_result.stdout)
     print("Standard Error:", index_result.stderr)
     if reference_file:
+        print(f"Using provided reference {reference_file}")
         maf_based_cmd = [
             "create_report",
             maf_file,
@@ -67,6 +74,7 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
         ]
 
     elif genome:
+        print(f"Using genome reference {genome}")
         maf_based_cmd = [
             "create_report",
             maf_file,
@@ -85,8 +93,8 @@ def create_igv_report(bed_file, maf_file, genome, reference_file, info_columns, 
 
 
 if __name__ == "__main__":
-    bed_file = "data/test.maflite.maf"
-    genome = "hg19"
-    title = f"TEST"
-    output = "test.html"
+    bed_file_str = "data/test.maflite.maf"
+    genome_str = "hg19"
+    title_str = f"TEST"
+    output_str = "test.html"
     create_igv_report(bed_file, genome, title, output)
