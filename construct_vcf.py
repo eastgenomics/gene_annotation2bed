@@ -1,6 +1,6 @@
 """
-    Construct a VCF file from a BED file containing the chromosome, start, and end positions
-    to be tested with VEP or visualised in IGV Reports.
+    Construct a VCF file from a BED file containing the chromosome,
+    start, and end positions to be tested with VEP or visualised in IGV Reports.
     Each row of the BED file is is converted into a row in the VCF for
     start, middle, and end coordinates using the reference genome.
 
@@ -11,7 +11,8 @@
     - Write docstrings
     - Write tests
     - Add logging
-
+    Example cmd for quick ref:
+    construct_vcf.py -fasta hs37d5.fa -b output_hg38_general_test1.bed
     Returns
     -------
     vcf_file written to test.vcf.
@@ -101,7 +102,9 @@ def fetch_nucleotides(row, reference_path, variant_dict):
     INFO_field = row['info']
     INFO_col = f"DP=268;{INFO_field}"
     FORMAT = f"GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ"
-    SAMPLE_col = f"1/1:0:0,114:114:1:65:-100:0.2192:27,12,16,14,23,22,27,12,16,14,23,22:100:100"
+    SAMPLE_col = ("1/1:0:0,114:114:1:65:-100:0.2192:"
+                  "27,12,16,14,23,22,27,12,16,14,23,22:100:100"
+                )
 
     # Fetch the start nucleotide from reference
     print(f"Fetching nucleotide sequence for {ncbi_chr}:{start}-{end}...")
@@ -155,14 +158,12 @@ def main():
                'FILTER', 'INFO', 'FORMAT', 'test-123456-1-DNA-egg6.bam']
 
     # Initialize an empty list to store the rows of the output dataframe
-    # "/home/rswilson1/Documents/MSC_dissertation/MELT_example_data/hs37d5.fa"
     reference_path = args.reference_file
 
-    # Fetch the nucleotide sequence from NCBI using the fetch_nucleotides function
     output_df = pd.DataFrame(columns=columns)
-
     for i, row in bed_file.iterrows():
-        # Fetch the nucleotide sequence from NCBI using the fetch_nucleotides function
+        # Fetch the nucleotide sequence from NCBI
+        # using the fetch_nucleotides function
         seq_df = fetch_nucleotides(row, reference_path, variant_dict)
         output_df = pd.concat([output_df, seq_df])
 

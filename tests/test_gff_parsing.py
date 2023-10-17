@@ -116,7 +116,12 @@ class TestSplitAttributes(unittest.TestCase):
 
     def test_dbxref_attribute(self):
         """Test splitting a Dbxref attribute."""
-        atts = "ID=gene-WASH7P;Dbxref=GeneID:653635,HGNC:HGNC:38034;Name=WASH7P;description=WASP family homolog 7%2C pseudogene;gbkey=Gene;gene=WASH7P;gene_biotype=transcribed_pseudogene;gene_synonym=FAM39F,WASH5P;pseudo=true"
+        atts = (
+            "ID=gene-WASH7P;Dbxref=GeneID:653635,HGNC:HGNC:38034;"
+            "Name=WASH7P;description=WASP family homolog 7%2C pseudogene;"
+            "gbkey=Gene;gene=WASH7P;gene_biotype=transcribed_pseudogene;"
+            "gene_synonym=FAM39F,WASH5P;pseudo=true"
+        )
         result = self._split_atts(atts)
         expected = {
             "ID": "gene-WASH7P",
