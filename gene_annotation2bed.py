@@ -406,7 +406,8 @@ def extract_hgnc_id(dbxref_str: str):
             hgnc_ids.append(hgnc_id)
     try:
         if len(hgnc_ids) > 1:
-            raise ValueError("Multiple HGNC IDs found: " + ", ".join(map(str, hgnc_ids)))
+            raise ValueError("Multiple HGNC IDs found: " +
+                             ", ".join(map(str, hgnc_ids)))
         elif hgnc_ids:
             return hgnc_ids[0]
         else:

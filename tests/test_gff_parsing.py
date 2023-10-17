@@ -70,17 +70,17 @@ class Test_parsing_gff(unittest.TestCase):
         # splits the attributes column into correctly.
 
 
-
 class TestSplitAttributes(unittest.TestCase):
     """
     Test Class for testing the _split_atts function from gff2pd.py.
     """
+
     def setUp(self):
         """
         Set-up for the test cases.
         """
         self._split_atts = gff2pd._split_atts
-    
+
     def test_empty_input(self):
         """Test splitting empty input."""
         atts = ""
@@ -97,19 +97,22 @@ class TestSplitAttributes(unittest.TestCase):
         """Test splitting multiple attributes."""
         atts = "ID=12345;Name=GeneX;Type=Protein"
         result = self._split_atts(atts)
-        self.assertEqual(result, {"ID": "12345", "Name": "GeneX", "Type": "Protein"})
+        self.assertEqual(
+            result, {"ID": "12345", "Name": "GeneX", "Type": "Protein"})
 
     def test_attributes_with_spaces(self):
         """Test splitting attributes with spaces in values."""
         atts = "ID=12345;Name=Gene X;Type=Protein"
         result = self._split_atts(atts)
-        self.assertEqual(result, {"ID": "12345", "Name": "Gene X", "Type": "Protein"})
+        self.assertEqual(
+            result, {"ID": "12345", "Name": "Gene X", "Type": "Protein"})
 
     def test_attributes_with_special_characters(self):
         """Test splitting attributes with special characters in values."""
         atts = "ID=12345;Note=This is a test!;Score=9.8"
         result = self._split_atts(atts)
-        self.assertEqual(result, {"ID": "12345", "Note": "This is a test!", "Score": "9.8"})
+        self.assertEqual(
+            result, {"ID": "12345", "Note": "This is a test!", "Score": "9.8"})
 
     def test_dbxref_attribute(self):
         """Test splitting a Dbxref attribute."""
@@ -127,6 +130,7 @@ class TestSplitAttributes(unittest.TestCase):
             "pseudo": "true",
         }
         self.assertEqual(result, expected)
+
 
 class TestAttributesToColumns(unittest.TestCase):
 
@@ -147,7 +151,8 @@ class TestAttributesToColumns(unittest.TestCase):
                             'Dbxref', 'ID', 'Name', 'Parent', 'description',
                             'gbkey', 'gene', 'gene_biotype', 'gene_synonym',
                             'product', 'pseudo', 'transcript_id']
-        self.assertListEqual(self.gff_new_df.columns.tolist(), expected_columns)
+        self.assertListEqual(
+            self.gff_new_df.columns.tolist(), expected_columns)
 
         # Check if the values in the resulting DataFrame match the provided GFF3 data
         self.assertEqual(self.gff_new_df.loc[0, "ID"], "gene-WASH7P")
@@ -155,21 +160,22 @@ class TestAttributesToColumns(unittest.TestCase):
         self.assertEqual(self.gff_new_df.loc[1, "ID"], "rna-NR_024540.1")
         self.assertEqual(self.gff_new_df.loc[1, "Name"], "NR_024540.1")
 
-
     def test_attributes_to_columns_empty_attributes(self):
         # Test when attributes are empty
         gff_file_empty_attr = "tests/test_data/test_empty_attributes.gff"
         gff_empty_attr = gff2pd.read_gff3(gff_file_empty_attr)
         gff_empty_attr_new_df = gff_empty_attr.attributes_to_columns()
         # Define the expected columns based on your GFF3 structure
-        expected_columns = ["seq_id", "source", "type", "start","end",
+        expected_columns = ["seq_id", "source", "type", "start", "end",
                             "score", "strand", "phase", "attributes"]
 
         # Check that the number of columns in the DataFrame matches the expected number
-        self.assertEqual(len(gff_empty_attr_new_df.columns), len(expected_columns))
+        self.assertEqual(len(gff_empty_attr_new_df.columns),
+                         len(expected_columns))
 
         # Optionally, you can check if the column names match the expected ones
-        self.assertListEqual(gff_empty_attr_new_df.columns.tolist(), expected_columns)
+        self.assertListEqual(
+            gff_empty_attr_new_df.columns.tolist(), expected_columns)
 
     def test_attributes_to_columns_missing_attributes(self):
         # Test when attributes are missing in some rows
@@ -181,15 +187,17 @@ class TestAttributesToColumns(unittest.TestCase):
         expected_columns = ['seq_id', 'source', 'type', 'start', 'end', 'score',
                             'strand', 'phase', 'attributes', 'ID', 'Name', 'gene',
                             'transcript_id']
-        self.assertListEqual(gff_missing_attr_new_df.columns.tolist(), expected_columns)
+        self.assertListEqual(
+            gff_missing_attr_new_df.columns.tolist(), expected_columns)
 
         # Check if the values in the resulting DataFrame match the provided GFF3 data
         self.assertEqual(gff_missing_attr_new_df.loc[0, "ID"], "gene-WASH7P")
         self.assertEqual(gff_missing_attr_new_df.loc[0, "Name"], "WASH7P")
-        self.assertEqual(gff_missing_attr_new_df.loc[1, "ID"], "rna-NR_024540.1")
+        self.assertEqual(
+            gff_missing_attr_new_df.loc[1, "ID"], "rna-NR_024540.1")
         self.assertEqual(gff_missing_attr_new_df.loc[1, "gene"], "WASH7P")
-        self.assertEqual(gff_missing_attr_new_df.loc[1, "transcript_id"], "NR_024540.1")
-
+        self.assertEqual(
+            gff_missing_attr_new_df.loc[1, "transcript_id"], "NR_024540.1")
 
 
 if __name__ == "__main__":
