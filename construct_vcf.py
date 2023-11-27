@@ -12,7 +12,7 @@
     - Write tests
     - Add logging
     Example cmd for quick ref:
-    construct_vcf.py -fasta hs37d5.fa -b output_hg38_general_test1.bed
+    construct_vcf.py -fasta /path/to/hs37d5.fa -b output_hg38_general_test1.bed
     Returns
     -------
     vcf_file written to test.vcf.
@@ -96,7 +96,7 @@ def fetch_nucleotides(row, reference_path, variant_dict):
         raise ValueError(f"Error: {chr} is not a valid chromosome")
 
     # Define the start, middle, and end positions
-    start = int(row['start']) + 1
+    start = int(row['start'])# + 1
     end = int(row['end'])
     middle = int((start + end) / 2)
     INFO_field = row['info']
@@ -141,13 +141,24 @@ def fetch_nucleotides(row, reference_path, variant_dict):
     return vcf_df
 
 
-def main():
+def convert_bed_to_vcf(bed_file_path, reference_path, output_file):
     """
-    Main function to run the script
+    Main logic to convert bed file into vcf file.
+    Using the fetch_nucleotides function.
+    This outputs a VCF (TSV file).
+
+    Parameters
+    ----------
+    bed_file_path : str
+        _description_
+    reference_path : str
+        _description_
+
+    output_file : str
+        _description_
     """
-    args = parse_args()
     header = ['chr', 'start', 'end', 'info', 'gene']
-    bed_file_path = args.bed_file
+
     bed_file = pd.read_csv(bed_file_path, names=header, sep='\t')
 
     # Define the variant dictionary to convert ref to alt
@@ -157,10 +168,8 @@ def main():
     columns = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL',
                'FILTER', 'INFO', 'FORMAT', 'test-123456-1-DNA-egg6.bam']
 
-    # Initialize an empty list to store the rows of the output dataframe
-    reference_path = args.reference_file
-
     output_df = pd.DataFrame(columns=columns)
+
     for i, row in bed_file.iterrows():
         # Fetch the nucleotide sequence from NCBI
         # using the fetch_nucleotides function
@@ -168,7 +177,22 @@ def main():
         output_df = pd.concat([output_df, seq_df])
 
     # saving as tsv file
-    output_df.to_csv(args.output_file, sep="\t", index=False)
+    output_df.to_csv(output_file, sep="\t", index=False)
+
+
+def main():
+    """
+    Main function to run the script
+    """
+
+    args = parse_args()
+    bed_file_path = args.bed_file
+
+    # Gather file paths
+    reference_path = args.reference_file
+    output_file = args.output_file
+
+    convert_bed_to_vcf(bed_file_path, reference_path, output_file)
 
 
 if __name__ == "__main__":
