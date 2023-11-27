@@ -8,6 +8,11 @@ Example cmd (TODO: add example cmd once script is finalized):
 -ig cancerGeneList_test.maf -ref "hg19" -f 5
 --assembly_summary "GCF_000001405.25_GRCh37.p13_assembly_report.txt"
 -o "test6"
+
+Current working cmd:
+/home/rswilson1/anaconda3/envs/Annotation_app/bin/python /home/rswilson1/Documents/Programming_project/gene_annotation2bed/gene_annotation2bed.py -gff data/GCF_000001405.25_GRCh37.p13_genomic.gf
+f -ig data/mixed_dataset.tsv -ref "hg19" -f 5 --assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt -o "test7"
+
 """
 
 import argparse
@@ -170,7 +175,7 @@ def parse_gff(gff_file):
             "pct_identity_ungap", "product", "product_coverage", "protein_id",
             "pseudo", "rank", "recombination_class", "regulatory_class",
             "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq",
-            "satellite", "splices", "standard_name", "start_range", "tag"
+            "satellite", "splices", "standard_name", "start_range", "tag",
             "tissue-type", "transl_except", "transl_table", "weighted_identity",
         ],
         axis=1,
@@ -191,6 +196,23 @@ def parse_gff(gff_file):
     # Filter GFF DataFrame to select entries with 'NM' type
     transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
     return transcripts_df
+
+
+def replace_chromosome_prefix_suffix(chromosome):
+    """
+    replace chr/chromosome in chromosome column.
+
+    Parameters
+    ----------
+    chromosome : str
+        string from chromosome column. i.e. chr1, chromosome1, Chr1.
+
+    Returns
+    -------
+    replaced string
+        string with instances of chr/chromosome replaced with empty string
+    """
+    return re.sub(r"(?i)(chr|omosome)?", "", chromosome)
 
 
 def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
@@ -244,9 +266,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         coordinates_df[["chromosome", "start", "end"]] = coordinates_df[
             "Coordinates"
         ].str.split("[:-]", expand=True)
-        coordinates_df["chromosome"] = coordinates_df["chromosome"].str.replace(
-            r"(?i)chr(omosome)?", "", regex=True
-        )
+        coordinates_df["chromosome"] = coordinates_df["chromosome"].apply(replace_chromosome_prefix_suffix)
         coordinates_df = coordinates_df[
             ["chromosome", "start", "end", "annotation", "gene"]
         ]
@@ -289,14 +309,19 @@ def parse_annotation_tsv(path: str,
         2. The coordinated dataframe for coordinates to be appended
            to a BED file later (coordinates_df).
     """
-    df = pd.read_csv(path, sep="\t")
+    df = pd.read_csv(path, sep="\t", dtype={'ID':'string','annotation':'string'})
     # Create masks for HGNC, Transcript, and Coordinates dataframes
-    hgnc_mask = df["ID"].str.startswith("HGNC:") | df["ID"].str.isnumeric()
-    # Use regex to match transcript IDs/chromosome coordinates
-    pattern_nm = r'^NM'
-    transcript_mask = df["ID"].str.contains(pattern_nm, case=False)
-    pattern_chr = r'^(chr|chromosome)'
-    coordinates_mask = df["ID"].str.contains(pattern_chr, case=False)
+    try:
+        hgnc_mask = df["ID"].str.startswith("HGNC:") | df["ID"].str.isnumeric()
+        # Use regex to match transcript IDs/chromosome coordinates
+        pattern_nm = r'^NM'
+        transcript_mask = df["ID"].str.contains(pattern_nm, case=True)
+        pattern_chr = r'^(chr|chromosome|Chr|Chromosome)'
+        coordinates_mask = df["ID"].str.contains(pattern_chr, case=False)
+    except KeyError:
+        print("The annotation file does not contain an 'ID' column.")
+        print("Please check the format of the annotation file.")
+        exit()
 
     # Use masks to filter the original dataframe
     not_separated_rows = df[~(hgnc_mask | transcript_mask | coordinates_mask)]
@@ -311,7 +336,6 @@ def parse_annotation_tsv(path: str,
     hgnc_df = df[hgnc_mask]
     transcript_df = df[transcript_mask]
     coordinates_df = df[coordinates_mask]
-    print(coordinates_df)
     # set dtype for each column
     dtype_mapping_hgnc = {
         "ID": "Int64",
@@ -371,7 +395,6 @@ def parse_annotation_tsv(path: str,
 
     # Coordinates dataframe split into columns
     coordinates_df = convert_coordinates(coordinates_df)
-
     return hgnc_merged_df, coordinates_df
 
 
