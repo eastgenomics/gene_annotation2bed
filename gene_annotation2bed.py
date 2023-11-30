@@ -266,7 +266,8 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         coordinates_df[["chromosome", "start", "end"]] = coordinates_df[
             "Coordinates"
         ].str.split("[:-]", expand=True)
-        coordinates_df["chromosome"] = coordinates_df["chromosome"].apply(replace_chromosome_prefix_suffix)
+        coordinates_df["chromosome"] = coordinates_df["chromosome"].apply(
+            replace_chromosome_prefix_suffix)
         coordinates_df = coordinates_df[
             ["chromosome", "start", "end", "annotation", "gene"]
         ]
@@ -309,7 +310,8 @@ def parse_annotation_tsv(path: str,
         2. The coordinated dataframe for coordinates to be appended
            to a BED file later (coordinates_df).
     """
-    df = pd.read_csv(path, sep="\t", dtype={'ID':'string','annotation':'string'})
+    df = pd.read_csv(path, sep="\t", dtype={
+                     'ID': 'string', 'annotation': 'string'})
     # Create masks for HGNC, Transcript, and Coordinates dataframes
     try:
         hgnc_mask = df["ID"].str.startswith("HGNC:") | df["ID"].str.isnumeric()
