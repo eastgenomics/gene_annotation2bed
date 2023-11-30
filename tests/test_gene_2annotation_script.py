@@ -5,7 +5,9 @@ Tests for gene_annotation2bed.py functions
 - extract_hgnc_id
 
 Run: python -m pytest -v tests/test_gene_2annotation_script.py
+
 """
+import os
 import sys
 from io import StringIO
 
@@ -15,8 +17,11 @@ import numpy as np
 
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
-from gene_annotation2bed import convert_coordinates, extract_hgnc_id
+from gene_annotation2bed import convert_coordinates, extract_hgnc_id, parse_annotation_tsv, parse_pickle
 
+TEST_DATA_DIR = (
+    os.path.join(os.path.dirname(__file__), 'test_data')
+)
 
 class TestExtractHGNCID(unittest.TestCase):
     def test_extract_hgnc_id_found(self):
@@ -139,6 +144,95 @@ class TestConvertCoordinates(unittest.TestCase):
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
+
+class Test_parsing_annotation_resource(unittest.TestCase):
+    """
+    Tests for checking correct parsing of the annotation resource.
+    """
+
+    def setUp(self):
+        try:
+            self.gff_transcripts_df = parse_pickle(
+            f"{TEST_DATA_DIR}/refseq_gff_preprocessed.pkl"
+            )
+        except FileNotFoundError:
+            print("File not found! Run from the root directory.")
+            sys.exit(1)
+
+
+    def test_parsing_transcripts(self):
+        """
+        Test parsing of transcripts
+        """
+        # Set-up to capture stdout
+        capturedOutput = StringIO()
+        sys.stdout = capturedOutput
+
+        path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
+        hgnc_merged_df, coordinates_df = parse_annotation_tsv(path, self.gff_transcripts_df)
+
+        # Check print output for coorect that all rows were separated.
+        sys.stdout = sys.__stdout__
+        print(capturedOutput.getvalue())
+        print_output = capturedOutput.getvalue().split("\n")
+        print(print_output)
+        self.assertEqual(print_output[0], "All rows were separated successfully")
+        self.assertEqual(print_output[1], "All HGNC rows were merged successfully")
+        self.assertEqual(print_output[2], "All Transcript rows were merged successfully")
+        self.assertEqual(print_output[3], "No Coordinates found in the annotation file.")
+
+        # Check df output
+        assert hgnc_merged_df.empty is False
+        transcripts_list = ["NM_000124", "NM_000059", "NM_000546"]
+        for i in transcripts_list:
+            transcript = hgnc_merged_df.loc[hgnc_merged_df['transcript_id'] == i]
+            print(transcript)
+            assert transcript.empty == False  # transcript found
+            assert transcript.shape[1] == 16  # correct number of columns
+        assert coordinates_df.empty == True
+
+
+    def test_parsing_coordinates(self):
+        filename = f"{TEST_DATA_DIR}/coordinates_anno_test.tsv"
+        hgnc_merged_df, coordinates_df = parse_annotation_tsv(filename, self.gff_transcripts_df)
+
+        # chr1:5000000-248956422	Non-Oncogene
+        # Chromosome1:5000-10000	Oncogene
+        # Chr19:1-100000	Non-Oncogene
+        # chr17:1-100000	Oncogene
+        self.assertEqual(hgnc_merged_df.empty, True)
+        print(coordinates_df)
+        self.assertEqual(coordinates_df["chromosome"].iloc[0], "1")
+        self.assertEqual(coordinates_df["start"].iloc[0], 5000000)
+        self.assertEqual(coordinates_df["end"].iloc[0], 248956422)
+        self.assertEqual(coordinates_df["annotation"].iloc[0], "Non-Oncogene")
+        self.assertEqual(coordinates_df["chromosome"].iloc[1], "2")
+        self.assertEqual(coordinates_df["start"].iloc[1], 5000)
+        self.assertEqual(coordinates_df["end"].iloc[1], 10000)
+        self.assertEqual(coordinates_df["annotation"].iloc[1], "Oncogene")
+        self.assertEqual(coordinates_df["chromosome"].iloc[2], "1")
+        self.assertEqual(coordinates_df["chromosome"].iloc[3], "19")
+        self.assertEqual(coordinates_df["start"].iloc[3], 1)
+        self.assertEqual(coordinates_df["end"].iloc[3], 100000)
+        self.assertEqual(coordinates_df["annotation"].iloc[3], "Non-Oncogene")
+        self.assertEqual(coordinates_df["chromosome"].iloc[4], "17")
+        self.assertEqual(coordinates_df["start"].iloc[4], 1)
+        self.assertEqual(coordinates_df["end"].iloc[4], 100000)
+        self.assertEqual(coordinates_df["annotation"].iloc[4], "Oncogene")
+
+
+    # def test_switched_coordinates_order(self):
+    #     """
+    #     Test if handles switched start/end or incorrect start/end coordinates
+    #     """
+    #     pass
+
+
+    # def test_parsing_hgnc():
+    #     """
+    #     _summary_
+    #     """
+    #     pass
 
 if __name__ == '__main__':
     unittest.main()
