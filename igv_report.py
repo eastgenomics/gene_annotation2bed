@@ -1,3 +1,7 @@
+"""
+Generate an IGV report from a bed file.
+"""
+
 import json
 import subprocess
 
