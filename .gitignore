@@ -163,3 +163,11 @@ cython_debug/
 *.pkl
 *old*
 *.maf
+*.fa
+*.fai
+*.gff
+*.gff3
+*.html
+*.js
+*.gz
+
