@@ -289,8 +289,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def parse_annotation_tsv(path: str,
-                         gff_transcripts_df: pd.DataFrame) -> tuple[pd.DataFrame,
-                                                                    pd.DataFrame]:
+                         gff_transcripts_df: pd.DataFrame):
     """
     Parse an annotation TSV file and separate it into dataframes for HGNC IDs,
     Transcript IDs, and Coordinates, then merge them with a GFF dataframe.
