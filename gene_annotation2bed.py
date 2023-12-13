@@ -690,6 +690,7 @@ def main():
         annotation_df, coordinates_df = parse_annotation_tsv(
             args.annotation_file, transcripts_df
         )
+
     # Read the transcript annotation file
     elif args.transcript_file:
         annotation_df, coordinates_df = parse_annotation_tsv(
