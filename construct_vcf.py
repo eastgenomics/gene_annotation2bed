@@ -65,6 +65,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     return args
 
+
 class ConstructVCF():
     # Define the variant dictionary to convert ref to alt nucleotides
     variant_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'A'}
@@ -98,17 +99,18 @@ class ConstructVCF():
         elif chr_str == 'Y':
             ncbi_chr = 'Y'
         elif chr_str == 'y' or chr_str == 'x':
-            raise ValueError(f"Error: {chr_str} is not a valid chromosome, use uppercase X or Y")
+            raise ValueError(
+                f"Error: {chr_str} is not a valid chromosome, use uppercase X or Y")
         else:
             try:
                 ncbi_chr = int(chr_str)
             except ValueError:
                 raise ValueError(f"Error: {chr_str} is not a valid chromosome")
             if ncbi_chr <= 22:
-                    ncbi_chr = int(chr_str)
+                ncbi_chr = int(chr_str)
             else:
-                raise ValueError(f"Error: {chr_str} is not a valid chromosome, greater than 22")
-
+                raise ValueError(
+                    f"Error: {chr_str} is not a valid chromosome, greater than 22")
 
         # Define the start, middle, and end positions
         start = (int(row['start']) + 1)
@@ -121,7 +123,7 @@ class ConstructVCF():
         FORMAT = f"GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ"
         SAMPLE_col = ("1/1:0:0,114:114:1:65:-100:0.2192:"
                       "27,12,16,14,23,22,27,12,16,14,23,22:100:100"
-                     )
+                      )
 
         # Fetch the start nucleotide from reference
         print(f"Fetching nucleotide sequence for {ncbi_chr}:{start}-{end}...")
@@ -158,7 +160,6 @@ class ConstructVCF():
         vcf_df = pd.DataFrame(data)
 
         return vcf_df
-
 
     def convert_bed_to_vcf(self):
         """
