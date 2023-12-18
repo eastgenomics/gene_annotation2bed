@@ -170,4 +170,4 @@ cython_debug/
 *.html
 *.js
 *.gz
-
+/redundant/
