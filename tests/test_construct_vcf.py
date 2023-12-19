@@ -10,15 +10,21 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 class TestConstructVCF(unittest.TestCase):
     def setUp(self):
-        # Define paths for sample data
+        """
+        Set-up for the test cases. Import the sample data.
+        """
         self.bed_file_path = f"{TEST_DATA_DIR}/example_bed_hg38.bed"
         self.reference_path = f"{TEST_DATA_DIR}/hs37d5.fa"
         self.output_file = "output_new_test.vcf"
         self.bed_df = pd.read_csv(f"{TEST_DATA_DIR}/example_bed_hg38.bed",
-                                  sep="\t", header=None, names=["chr", "start", "end", "info", "gene"])
+                                  sep="\t", header=None, names=["chr", "start",
+                                                                "end", "info",
+                                                                "gene"])
 
     def test_parse_args(self):
-        # Test command line argument parsing
+        """
+        Test command line argument parsing
+        """
         with patch("sys.argv", ["script.py", "-b", "tests/test_data/example_bed_hg38.bed", "-fasta", "tests/test_data/hs37d5.fa", "-o", "output_new_test.vcf"]):
             args = parse_args()
             self.assertEqual(
@@ -27,7 +33,10 @@ class TestConstructVCF(unittest.TestCase):
             self.assertEqual(args.output_file, "output_new_test.vcf")
 
     def test_fetch_nucleotides_normal(self):
-        # Test fetch_nucleotides method
+        """
+        Test fetch_nucleotides method for normal chromosomes
+        Uses patch to avoid reference file dependency
+        """
 
         # Mock the pysam.faidx function
         with patch("pysam.faidx") as mock_faidx:
@@ -61,7 +70,10 @@ class TestConstructVCF(unittest.TestCase):
             self.assertEqual(result_df.iloc[2]['ALT'], 'G')
 
     def test_fetch_nucleotides_normal_X(self):
-        # Test fetch_nucleotides method
+        """
+        Test fetch_nucleotides method for normal X chr.
+        Uses patch to avoid reference file dependency
+        """
 
         # Mock the pysam.faidx function
         with patch("pysam.faidx") as mock_faidx:
@@ -79,8 +91,7 @@ class TestConstructVCF(unittest.TestCase):
 
             # Call the method
             result_df = vcf_obj.fetch_nucleotides(row, self.reference_path)
-            print(result_df)
-            print(result_df.iloc[0])
+
             # Assertions
             assert mock_faidx.call_args_list == [
                 ((self.reference_path, "X:2-2"), {}),
@@ -95,8 +106,10 @@ class TestConstructVCF(unittest.TestCase):
             self.assertEqual(result_df.iloc[2]['ALT'], 'G')
 
     def test_fetch_nucleotides_invalid_chr_character(self):
-        # Tests if the correct error is raised by
-        # fetch_nucleotides when an invalid chromosome is passed
+        """
+        Tests if the correct error is raised by fetch_nucleotides
+        when an invalid chromosome character is parsed, i.e. not chrX or chrY.
+        """
 
         # Initialize ConstructVCF object
         vcf_obj = ConstructVCF(
@@ -112,8 +125,10 @@ class TestConstructVCF(unittest.TestCase):
             excinfo.value) == f"Error: {chromosome.replace('chr', '')} is not a valid chromosome"
 
     def test_fetch_nucleotides_invalid_chr_number(self):
-        # Tests if the correct error is raised by
-        # fetch_nucleotides when an invalid chromosome is passed
+        """
+        Tests if the correct error is raised by fetch_nucleotides
+        when an invalid chromosome integer is parsed i.e. Not Chr1-22.
+        """
 
         # Initialize ConstructVCF object
         vcf_obj = ConstructVCF(
@@ -129,8 +144,10 @@ class TestConstructVCF(unittest.TestCase):
             excinfo.value) == f"Error: {chromosome.replace('chr', '')} is not a valid chromosome, greater than 22"
 
     def test_fetch_nucleotides_invalid_case(self):
-        # Tests if the correct error is raised by
-        # fetch_nucleotides when an invalid chromosome is passed
+        """
+        Tests if the correct error is raised by fetch_nucleotides
+        when an invalid chromosome is passed
+        """
 
         # Initialize ConstructVCF object
         vcf_obj = ConstructVCF(
@@ -146,7 +163,9 @@ class TestConstructVCF(unittest.TestCase):
             excinfo.value) == f"Error: {chromosome.replace('chr', '')} is not a valid chromosome, use uppercase X or Y"
 
     def test_convert_bed_to_vcf(self):
-        # Test convert_bed_to_vcf method
+        """
+        Tests if the convert_bed_to_vcf method returns the expected output
+        """
         vcf_obj = ConstructVCF(
             self.bed_file_path, self.reference_path, self.output_file)
         vcf_df = vcf_obj.convert_bed_to_vcf()
@@ -154,19 +173,19 @@ class TestConstructVCF(unittest.TestCase):
             f"{TEST_DATA_DIR}/expected_output.vcf", sep="\t")
         # Define the columns and their desired data types
         columns_to_convert = {
-                '#CHROM': 'int64',
-                'POS': 'int64',
-                'ID': 'str',
-                'REF': 'str',
-                'ALT': 'str',
-                'QUAL': 'int64',
-                'FILTER': 'str',
-                'INFO': 'str',
-                'FORMAT': 'str',
-                'test-123456-1-DNA-egg6.bam': 'str'
-            }
+            '#CHROM': 'int64',
+            'POS': 'int64',
+            'ID': 'str',
+            'REF': 'str',
+            'ALT': 'str',
+            'QUAL': 'int64',
+            'FILTER': 'str',
+            'INFO': 'str',
+            'FORMAT': 'str',
+            'test-123456-1-DNA-egg6.bam': 'str'
+        }
 
-            # Convert the data types of the specified columns
+        # Convert the data types of the specified columns
         expected_df = expected_df.astype(columns_to_convert)
         pd.testing.assert_frame_equal(expected_df, vcf_df)
 

@@ -56,7 +56,10 @@ class TestExtractHGNCID(unittest.TestCase):
 class TestConvertCoordinates(unittest.TestCase):
 
     def test_convert_coordinates(self):
-        # Test regular input
+        """
+        Testing the extraction of HGNC ID from the attributes string.
+        Using the convert_coordinates function.
+        """
         input_data = {
             "Coordinates": ["chr1:11874-14409", "chr2:20000-25000"],
             "annotation": ["promoter_of_interest", "enhancer"]
@@ -77,14 +80,18 @@ class TestConvertCoordinates(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_convert_coordinates_empty(self):
-        # Test when input DataFrame is empty
+        """
+        Test when the input DataFrame is empty
+        """
         input_df = pd.DataFrame()
         result_df = convert_coordinates(input_df)
         print(result_df)
         self.assertTrue(result_df.empty)
 
     def test_convert_coordinates_extra_columns(self):
-        # Test when input DataFrame has extra columns
+        """
+        Test when the input DataFrame has extra columns
+        """
         input_data = {
             "Coordinates": ["chr1:11874-14409", "chr2:20000-25000"],
             "annotation": ["promoter_of_interest", "enhancer"],
@@ -105,7 +112,9 @@ class TestConvertCoordinates(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_convert_coordinates_different_spellings_of_chr(self):
-        # Test different spellings of "chr" (case-insensitive)
+        """
+        Test different spellings of "chr" (case-insensitive)
+        """
         input_data = {
             "Coordinates": ["Chr1:11874-14409", "Chromosome2:20000-25000"],
             "annotation": ["promoter_of_interest", "enhancer"]
@@ -125,7 +134,9 @@ class TestConvertCoordinates(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_convert_coordinates_large_numbers(self):
-        # Test with large numbers
+        """
+        Test with large numbers
+        """
         input_data = {
             "Coordinates": ["chr1:999999999-1000000000"],
             "annotation": ["large_region"]
@@ -151,18 +162,24 @@ class Test_parsing_annotation_resource(unittest.TestCase):
     """
 
     def setUp(self):
+        """
+        Set up the test data. Load the preprocessed gff file.
+        If not present then exit.
+        # TODO: Add a test for the parsing of the gff file.
+        # run script to produce gff if not present?
+        """
         try:
             self.gff_transcripts_df = parse_pickle(
             f"{TEST_DATA_DIR}/refseq_gff_preprocessed.pkl"
             )
         except FileNotFoundError:
-            print("File not found! Run from the root directory.")
+            print("File not found! Ensure the preprocessed gff file is present.")
             sys.exit(1)
 
 
     def test_parsing_transcripts(self):
         """
-        Test parsing of transcripts
+        Test parsing of transcripts from the annotation file.
         """
         # Set-up to capture stdout
         capturedOutput = StringIO()
@@ -186,13 +203,15 @@ class Test_parsing_annotation_resource(unittest.TestCase):
         transcripts_list = ["NM_000124", "NM_000059", "NM_000546"]
         for i in transcripts_list:
             transcript = hgnc_merged_df.loc[hgnc_merged_df['transcript_id'] == i]
-            print(transcript)
             assert transcript.empty == False  # transcript found
             assert transcript.shape[1] == 16  # correct number of columns
         assert coordinates_df.empty == True
 
 
     def test_parsing_coordinates(self):
+        """
+        Test parsing of raw coordinates from the annotation file.
+        """
         filename = f"{TEST_DATA_DIR}/coordinates_anno_test.tsv"
         hgnc_merged_df, coordinates_df = parse_annotation_tsv(filename, self.gff_transcripts_df)
 
@@ -201,7 +220,6 @@ class Test_parsing_annotation_resource(unittest.TestCase):
         # Chr19:1-100000	Non-Oncogene
         # chr17:1-100000	Oncogene
         self.assertEqual(hgnc_merged_df.empty, True)
-        print(coordinates_df)
         self.assertEqual(coordinates_df["chromosome"].iloc[0], "1")
         self.assertEqual(coordinates_df["start"].iloc[0], 5000000)
         self.assertEqual(coordinates_df["end"].iloc[0], 248956422)
@@ -227,12 +245,6 @@ class Test_parsing_annotation_resource(unittest.TestCase):
     #     """
     #     pass
 
-
-    # def test_parsing_hgnc():
-    #     """
-    #     _summary_
-    #     """
-    #     pass
 
 if __name__ == '__main__':
     unittest.main()
