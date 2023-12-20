@@ -10,9 +10,7 @@ Example cmd (TODO: add example cmd once script is finalized):
 -o "test6"
 
 Current working cmd:
-/home/rswilson1/anaconda3/envs/Annotation_app/bin/python /home/rswilson1/Documents/Programming_project/gene_annotation2bed/gene_annotation2bed.py -gff data/GCF_000001405.25_GRCh37.p13_genomic.gf
-f -ig data/mixed_dataset.tsv -ref "hg19" -f 5 --assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt -o "test7"
-
+/home/rswilson1/anaconda3/envs/Annotation_app/bin/python /home/rswilson1/Documents/Programming_project/gene_annotation2bed/gene_annotation2bed.py -pkl ./tests/test_data/refseq_gff_preprocessed.pkl  -ig data/mixed_dataset.tsv -ref_igv ./tests/test_data/hs37d5.fa -ref hg38 -f 5 --assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt -o "test_X"
 """
 
 import argparse
@@ -62,8 +60,8 @@ def parse_args() -> argparse.Namespace:
         required=True, choices=('hg19', 'hg38')
     )
     parser.add_argument(
-        "-fasta",
-        "--reference_file",
+        "-ref_igv",
+        "--reference_file_for_igv",
         help="Path to Reference genome fasta file for igv_reports",
     )
     parser.add_argument(
@@ -221,7 +219,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
 
     Parameters
     ----------
-    coordinates_df : pd.DataFrame
+    coordinates_df : pd.DataFrame (0-based)
         coordinate format provided by the annotation file.
         ID                  annotation
         chr1:11874-14409    promoter_of_interest
@@ -312,17 +310,14 @@ def parse_annotation_tsv(path: str,
     df = pd.read_csv(path, sep="\t", dtype={
                      'ID': 'string', 'annotation': 'string'})
     # Create masks for HGNC, Transcript, and Coordinates dataframes
-    try:
-        hgnc_mask = df["ID"].str.startswith("HGNC:") | df["ID"].str.isnumeric()
-        # Use regex to match transcript IDs/chromosome coordinates
-        pattern_nm = r'^NM'
-        transcript_mask = df["ID"].str.contains(pattern_nm, case=True)
-        pattern_chr = r'^(chr|chromosome|Chr|Chromosome)'
-        coordinates_mask = df["ID"].str.contains(pattern_chr, case=False)
-    except KeyError:
-        print("The annotation file does not contain an 'ID' column.")
-        print("Please check the format of the annotation file.")
-        exit()
+    assert 'ID' in df.columns, 'The annotation file does not contain an "ID" column'
+
+    hgnc_mask = df["ID"].str.startswith("HGNC:") | df["ID"].str.isnumeric()
+    # Use regex to match transcript IDs/chromosome coordinates
+    pattern_nm = r'^NM'
+    transcript_mask = df["ID"].str.contains(pattern_nm, case=True)
+    pattern_chr = r'^(chr|chromosome|Chr|Chromosome)'
+    coordinates_mask = df["ID"].str.contains(pattern_chr, case=False)
 
     # Use masks to filter the original dataframe
     not_separated_rows = df[~(hgnc_mask | transcript_mask | coordinates_mask)]
@@ -496,7 +491,7 @@ def parse_pickle(pickle_file: str):
     ----------
     pickle_file : str (path to Pickle file)
         pickle file of a GFF DataFrame once parsed
-        with columns from attributes_to_columns
+        with columns from attributes_to_columns (1-based)
 
     Returns
     -------
@@ -578,7 +573,7 @@ def config_igv_report(args: argparse.Namespace):
     maf_file = f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
     bed_file = f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
     genome = args.reference_genome
-    fasta_ref = args.reference_file
+    fasta_ref = args.reference_file_for_igv
     info_columns = []
     title = f"{args.output_file_suffix}_report"
     output_file = f"{title}.html"
@@ -594,6 +589,24 @@ def config_igv_report(args: argparse.Namespace):
     )
 
     print("IGV report created successfully!")
+
+def subtract_and_replace(position, flanking_int):
+    """
+    Define a function to apply the subtraction and replace with 0 if negative
+
+    Parameters
+    ----------
+    position : int
+        position to subtract from.
+    flanking_int : int
+        integer value to subtract from each value in the list.
+
+    Returns
+    -------
+    result : list
+        list of values with flanking subtracted, minimum value = 0.
+    """
+    return max(1, position - flanking_int)
 
 
 def write_bed(annotation_df: pd.DataFrame,
@@ -620,8 +633,12 @@ def write_bed(annotation_df: pd.DataFrame,
     # Create BED file with flanking regions
     print("Creating BED file")
     print("Adding flanking regions")
-    annotation_df["start_flank"] = annotation_df["start"] - args.flanking
-    annotation_df["end_flank"] = annotation_df["end"] + args.flanking
+    #annotation_df["start_flank"] = annotation_df["start"] - args.flanking
+    # Apply the function to the specified column
+    print(args.flanking)
+    annotation_df["start_flank"] = annotation_df["start"].apply(subtract_and_replace, flanking_int=args.flanking)
+    annotation_df["end_flank"] = annotation_df["end"].apply(subtract_and_replace, flanking_int=args.flanking)
+    # annotation_df["end_flank"] = annotation_df["end"] + args.flanking
     bed_columns = [
         "seq_id",
         "start_flank",
