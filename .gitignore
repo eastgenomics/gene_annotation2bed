@@ -168,6 +168,5 @@ cython_debug/
 *.gff3
 *.html
 *.js
-*.gz
 /output/
 /redundant/
