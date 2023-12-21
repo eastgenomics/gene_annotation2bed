@@ -94,23 +94,16 @@ class ConstructVCF():
         """
         # Define the chromosome number and NCBI identifier
         chr_str = str(row['chr']).replace('chr', '')
-        if chr_str == 'X':
+        if chr_str.upper() == 'X':
             ncbi_chr = 'X'
-        elif chr_str == 'Y':
+        elif chr_str.upper() == 'Y':
             ncbi_chr = 'Y'
-        elif chr_str == 'y' or chr_str == 'x':
-            raise ValueError(
-                f"Error: {chr_str} is not a valid chromosome, use uppercase X or Y")
         else:
             try:
                 ncbi_chr = int(chr_str)
-            except ValueError:
+                assert ncbi_chr <= 22
+            except:
                 raise ValueError(f"Error: {chr_str} is not a valid chromosome")
-            if ncbi_chr <= 22:
-                ncbi_chr = int(chr_str)
-            else:
-                raise ValueError(
-                    f"Error: {chr_str} is not a valid chromosome, greater than 22")
 
         # Define the start, middle, and end positions
         start = (int(row['start']) + 1)
@@ -138,7 +131,7 @@ class ConstructVCF():
         middle_nuc = middle_seq.splitlines()[1]
         end_nuc = end_seq.splitlines()[1]
 
-        # # Convert the ref nucleotides to the alternate nucleotides
+        # Convert the ref nucleotides to the alternate nucleotides
         start_nuc_variant = ConstructVCF.variant_dict[start_nuc]
         middle_nuc_variant = ConstructVCF.variant_dict[middle_nuc]
         end_nuc_variant = ConstructVCF.variant_dict[end_nuc]
@@ -208,9 +201,8 @@ class ConstructVCF():
             seq_df = self.fetch_nucleotides(row, self.reference_path)
             output_df = pd.concat([output_df, seq_df])
 
-        # Possible new way make a list of series and then call pd.DataFrame(list_of_series)
-        # list_of_series = [pd.Series([1,2],index=cols), pd.Series([3,4],index=cols)]
-        # df = pd.DataFrame(list_of_series, columns=cols)
+        # sequences = bed_file.apply(lambda x: self.fetch_nucleotides(x, self.reference_path), axis=1)
+        # output_df = pd.concat([output_df, sequences])
 
         # saving as tsv file
         # Define the columns and their desired data types

@@ -13,6 +13,7 @@ from io import StringIO
 
 import unittest
 import pandas as pd
+import pytest
 import numpy as np
 
 # set up the path to the module
@@ -65,9 +66,7 @@ class TestConvertCoordinates(unittest.TestCase):
             "annotation": ["promoter_of_interest", "enhancer"]
         }
         input_df = pd.DataFrame(input_data)
-        print(input_df['Coordinates'])
         result_df = convert_coordinates(input_df)
-        print(result_df)
         expected_data = {
             "chromosome": ["1", "2"],
             "start": [11874, 20000],
@@ -85,7 +84,6 @@ class TestConvertCoordinates(unittest.TestCase):
         """
         input_df = pd.DataFrame()
         result_df = convert_coordinates(input_df)
-        print(result_df)
         self.assertTrue(result_df.empty)
 
     def test_convert_coordinates_extra_columns(self):
@@ -190,13 +188,17 @@ class Test_parsing_annotation_resource(unittest.TestCase):
 
         # Check print output for coorect that all rows were separated.
         sys.stdout = sys.__stdout__
-        print(capturedOutput.getvalue())
         print_output = capturedOutput.getvalue().split("\n")
-        print(print_output)
-        self.assertEqual(print_output[0], "All rows were separated successfully")
-        self.assertEqual(print_output[1], "All HGNC rows were merged successfully")
-        self.assertEqual(print_output[2], "All Transcript rows were merged successfully")
-        self.assertEqual(print_output[3], "No Coordinates found in the annotation file.")
+        expected_output_list = [
+            "All rows were separated successfully",
+            "All HGNC rows were merged successfully",
+            "All Transcript rows were merged successfully",
+            "No Coordinates found in the annotation file."
+        ]
+
+        for i, (actual_output, expected_output) in enumerate(zip(print_output, expected_output_list), 1):
+            with self.subTest(f"Test case {i} - {actual_output}"):
+                self.assertEqual(actual_output, expected_output)
 
         # Check df output
         assert hgnc_merged_df.empty is False
