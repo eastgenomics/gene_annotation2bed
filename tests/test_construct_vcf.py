@@ -141,12 +141,7 @@ class TestConstructVCF(unittest.TestCase):
             ]
 
             assert all([x[0] == x[1] for x in expected])
-            # self.assertEqual(result_df.iloc[0]['REF'], 'A')
-            # self.assertEqual(result_df.iloc[0]['ALT'], 'T')
-            # self.assertEqual(result_df.iloc[1]['REF'], 'T')
-            # self.assertEqual(result_df.iloc[1]['ALT'], 'A')
-            # self.assertEqual(result_df.iloc[2]['REF'], 'C')
-            # self.assertEqual(result_df.iloc[2]['ALT'], 'G')
+
 
     def test_fetch_nucleotides_invalid_chr_character(self):
         """
