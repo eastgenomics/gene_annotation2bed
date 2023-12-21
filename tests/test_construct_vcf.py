@@ -80,12 +80,17 @@ class TestConstructVCF(unittest.TestCase):
                 ((self.reference_path, "14:5-5"), {}),
                 ((self.reference_path, "14:10-10"), {}),
             ]
-            self.assertEqual(result_df.iloc[0]['REF'], 'A')
-            self.assertEqual(result_df.iloc[0]['ALT'], 'T')
-            self.assertEqual(result_df.iloc[1]['REF'], 'T')
-            self.assertEqual(result_df.iloc[1]['ALT'], 'A')
-            self.assertEqual(result_df.iloc[2]['REF'], 'C')
-            self.assertEqual(result_df.iloc[2]['ALT'], 'G')
+            expected = [
+                (result_df.iloc[0]['REF'], 'A'),
+                (result_df.iloc[0]['ALT'], 'T'),
+                (result_df.iloc[1]['REF'], 'T'),
+                (result_df.iloc[1]['ALT'], 'A'),
+                (result_df.iloc[2]['REF'], 'C'),
+                (result_df.iloc[2]['ALT'], 'G')
+            ]
+
+            assert all([x[0] == x[1] for x in expected])
+
 
     def test_fetch_nucleotides_valid_sex_chr(self):
         """
