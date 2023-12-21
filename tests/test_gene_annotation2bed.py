@@ -154,7 +154,7 @@ class TestConvertCoordinates(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
 
-class Test_parsing_annotation_resource(unittest.TestCase):
+class TestParseAnnotationTsv(unittest.TestCase):
     """
     Tests for checking correct parsing of the annotation resource.
     """
