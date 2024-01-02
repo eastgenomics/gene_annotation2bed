@@ -168,12 +168,11 @@ class TestParseAnnotationTsv(unittest.TestCase):
         """
         try:
             self.gff_transcripts_df = parse_pickle(
-            f"{TEST_DATA_DIR}/refseq_gff_preprocessed.pkl"
-            )
+                f"{TEST_DATA_DIR}/refseq_gff_preprocessed.pkl"
+                )
         except FileNotFoundError:
             print("File not found! Ensure the preprocessed gff file is present.")
             sys.exit(1)
-
 
     def test_parsing_transcripts(self):
         """
