@@ -20,7 +20,7 @@ class TestConstructVCF(unittest.TestCase):
             f"{TEST_DATA_DIR}/example_bed_hg38.bed",
             sep="\t", header=None,
             names=["chr", "start", "end", "info", "gene"]
-            )
+        )
 
     def test_parse_args(self):
         """
@@ -91,7 +91,6 @@ class TestConstructVCF(unittest.TestCase):
 
             assert all([x[0] == x[1] for x in expected])
 
-
     def test_fetch_nucleotides_valid_sex_chr(self):
         """
         Test fetch_nucleotides method for valid X chromosome with mocked data.
@@ -147,7 +146,6 @@ class TestConstructVCF(unittest.TestCase):
 
             assert all([x[0] == x[1] for x in expected])
 
-
     def test_fetch_nucleotides_invalid_chr_character(self):
         """
         Tests if the correct error is raised by fetch_nucleotides
@@ -166,7 +164,6 @@ class TestConstructVCF(unittest.TestCase):
 
         with pytest.raises(ValueError, match=expected_error):
             result_df = vcf_obj.fetch_nucleotides(row, self.reference_path)
-
 
     def test_fetch_nucleotides_invalid_chr_number(self):
         """
