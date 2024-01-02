@@ -598,6 +598,7 @@ def config_igv_report(args: argparse.Namespace):
 
     print("IGV report created successfully!")
 
+
 def subtract_and_replace(position, flanking_int):
     """
     Define a function to apply the subtraction and replace with 0 if negative

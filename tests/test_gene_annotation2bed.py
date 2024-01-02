@@ -18,7 +18,8 @@ import numpy as np
 
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
-from gene_annotation2bed import convert_coordinates, extract_hgnc_id, parse_annotation_tsv, parse_pickle
+from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
+                                 parse_annotation_tsv, parse_pickle)
 
 TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
@@ -204,22 +205,20 @@ class TestParseAnnotationTsv(unittest.TestCase):
         transcripts_list = ["NM_000124", "NM_000059", "NM_000546"]
         for i in transcripts_list:
             transcript = hgnc_merged_df.loc[hgnc_merged_df['transcript_id'] == i]
-            assert transcript.empty == False  # transcript found
+            assert transcript.empty is False, f"Transcript {i} not found"
             assert transcript.shape[1] == 16  # correct number of columns
-        assert coordinates_df.empty == True
-
+        assert coordinates_df.empty is True
 
     def test_parsing_coordinates(self):
         """
         Test parsing of raw coordinates from the annotation file.
         """
         filename = f"{TEST_DATA_DIR}/coordinates_anno_test.tsv"
-        hgnc_merged_df, coordinates_df = parse_annotation_tsv(filename, self.gff_transcripts_df)
+        hgnc_merged_df, coordinates_df = parse_annotation_tsv(
+            filename,
+            self.gff_transcripts_df
+            )
 
-        # chr1:5000000-248956422	Non-Oncogene
-        # Chromosome1:5000-10000	Oncogene
-        # Chr19:1-100000	Non-Oncogene
-        # chr17:1-100000	Oncogene
         expected_data = {
             'chromosome': ['1', '2', '1', '19', '17'],
             'start': [5000000, 5000, 5000, 1, 1],
@@ -236,13 +235,11 @@ class TestParseAnnotationTsv(unittest.TestCase):
         pd.testing.assert_frame_equal(coordinates_df, expected_df)
         self.assertEqual(hgnc_merged_df.empty, True)
 
-
     # def test_switched_coordinates_order(self):
     #     """
     #     Test if handles switched start/end or incorrect start/end coordinates
     #     """
     #     pass
-
 
 if __name__ == '__main__':
     unittest.main()
