@@ -8,6 +8,15 @@ Example cmd (TODO: add example cmd once script is finalized):
 -ig cancerGeneList_test.maf -ref "hg19" -f 5
 --assembly_summary "GCF_000001405.25_GRCh37.p13_assembly_report.txt"
 -o "test6"
+
+Current working cmd:
+/home/rswilson1/anaconda3/envs/Annotation_app/bin/python
+/home/rswilson1/Documents/Programming_project/gene_annotation2bed/gene_annotation2bed.py
+-pkl ./tests/test_data/refseq_gff_preprocessed.pkl
+-ig data/mixed_dataset.tsv
+-ref_igv ./tests/test_data/hs37d5.fa -ref hg38 -f 5
+--assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt
+-o "test_X"
 """
 
 import argparse
@@ -57,8 +66,8 @@ def parse_args() -> argparse.Namespace:
         required=True, choices=('hg19', 'hg38')
     )
     parser.add_argument(
-        "-fasta",
-        "--reference_file",
+        "-ref_igv",
+        "--reference_file_for_igv",
         help="Path to Reference genome fasta file for igv_reports",
     )
     parser.add_argument(
@@ -170,7 +179,7 @@ def parse_gff(gff_file):
             "pct_identity_ungap", "product", "product_coverage", "protein_id",
             "pseudo", "rank", "recombination_class", "regulatory_class",
             "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq",
-            "satellite", "splices", "standard_name", "start_range", "tag"
+            "satellite", "splices", "standard_name", "start_range", "tag",
             "tissue-type", "transl_except", "transl_table", "weighted_identity",
         ],
         axis=1,
@@ -193,13 +202,30 @@ def parse_gff(gff_file):
     return transcripts_df
 
 
+def replace_chromosome_prefix_suffix(chromosome):
+    """
+    replace chr/chromosome in chromosome column.
+
+    Parameters
+    ----------
+    chromosome : str
+        string from chromosome column. i.e. chr1, chromosome1, Chr1.
+
+    Returns
+    -------
+    replaced string
+        string with instances of chr/chromosome replaced with empty string
+    """
+    return re.sub(r"(?i)(chr|omosome)?", "", chromosome)
+
+
 def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
     """
     Convert coordinates dataframe to BED format.
 
     Parameters
     ----------
-    coordinates_df : pd.DataFrame
+    coordinates_df : pd.DataFrame (0-based)
         coordinate format provided by the annotation file.
         ID                  annotation
         chr1:11874-14409    promoter_of_interest
@@ -244,9 +270,8 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         coordinates_df[["chromosome", "start", "end"]] = coordinates_df[
             "Coordinates"
         ].str.split("[:-]", expand=True)
-        coordinates_df["chromosome"] = coordinates_df["chromosome"].str.replace(
-            r"(?i)chr(omosome)?", "", regex=True
-        )
+        coordinates_df["chromosome"] = coordinates_df["chromosome"].apply(
+            replace_chromosome_prefix_suffix)
         coordinates_df = coordinates_df[
             ["chromosome", "start", "end", "annotation", "gene"]
         ]
@@ -259,8 +284,10 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         return empty_df
 
     try:
+        coordinates_df["chromosome"] = coordinates_df["chromosome"].astype('str')
         coordinates_df["start"] = coordinates_df["start"].astype('Int64')
         coordinates_df["end"] = coordinates_df["end"].astype('Int64')
+        coordinates_df["annotation"] = coordinates_df["annotation"].astype('str')
     except ValueError as e:
         print(f"Error: {e}")
 
@@ -268,8 +295,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def parse_annotation_tsv(path: str,
-                         gff_transcripts_df: pd.DataFrame) -> tuple[pd.DataFrame,
-                                                                    pd.DataFrame]:
+                         gff_transcripts_df: pd.DataFrame):
     """
     Parse an annotation TSV file and separate it into dataframes for HGNC IDs,
     Transcript IDs, and Coordinates, then merge them with a GFF dataframe.
@@ -289,13 +315,16 @@ def parse_annotation_tsv(path: str,
         2. The coordinated dataframe for coordinates to be appended
            to a BED file later (coordinates_df).
     """
-    df = pd.read_csv(path, sep="\t")
+    df = pd.read_csv(path, sep="\t", dtype={
+                     'ID': 'string', 'annotation': 'string'})
     # Create masks for HGNC, Transcript, and Coordinates dataframes
+    assert 'ID' in df.columns, 'The annotation file does not contain an "ID" column'
+
     hgnc_mask = df["ID"].str.startswith("HGNC:") | df["ID"].str.isnumeric()
     # Use regex to match transcript IDs/chromosome coordinates
     pattern_nm = r'^NM'
-    transcript_mask = df["ID"].str.contains(pattern_nm, case=False)
-    pattern_chr = r'^(chr|chromosome)'
+    transcript_mask = df["ID"].str.contains(pattern_nm, case=True)
+    pattern_chr = r'^(chr|chromosome|Chr|Chromosome)'
     coordinates_mask = df["ID"].str.contains(pattern_chr, case=False)
 
     # Use masks to filter the original dataframe
@@ -311,7 +340,6 @@ def parse_annotation_tsv(path: str,
     hgnc_df = df[hgnc_mask]
     transcript_df = df[transcript_mask]
     coordinates_df = df[coordinates_mask]
-    print(coordinates_df)
     # set dtype for each column
     dtype_mapping_hgnc = {
         "ID": "Int64",
@@ -371,7 +399,6 @@ def parse_annotation_tsv(path: str,
 
     # Coordinates dataframe split into columns
     coordinates_df = convert_coordinates(coordinates_df)
-
     return hgnc_merged_df, coordinates_df
 
 
@@ -472,7 +499,7 @@ def parse_pickle(pickle_file: str):
     ----------
     pickle_file : str (path to Pickle file)
         pickle file of a GFF DataFrame once parsed
-        with columns from attributes_to_columns
+        with columns from attributes_to_columns (1-based)
 
     Returns
     -------
@@ -554,7 +581,7 @@ def config_igv_report(args: argparse.Namespace):
     maf_file = f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
     bed_file = f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
     genome = args.reference_genome
-    fasta_ref = args.reference_file
+    fasta_ref = args.reference_file_for_igv
     info_columns = []
     title = f"{args.output_file_suffix}_report"
     output_file = f"{title}.html"
@@ -570,6 +597,25 @@ def config_igv_report(args: argparse.Namespace):
     )
 
     print("IGV report created successfully!")
+
+
+def subtract_and_replace(position, flanking_int):
+    """
+    Define a function to apply the subtraction and replace with 0 if negative
+
+    Parameters
+    ----------
+    position : int
+        position to subtract from.
+    flanking_int : int
+        integer value to subtract from each value in the list.
+
+    Returns
+    -------
+    result : list
+        list of values with flanking subtracted, minimum value = 0.
+    """
+    return max(1, position - flanking_int)
 
 
 def write_bed(annotation_df: pd.DataFrame,
@@ -596,8 +642,15 @@ def write_bed(annotation_df: pd.DataFrame,
     # Create BED file with flanking regions
     print("Creating BED file")
     print("Adding flanking regions")
-    annotation_df["start_flank"] = annotation_df["start"] - args.flanking
-    annotation_df["end_flank"] = annotation_df["end"] + args.flanking
+
+    # Apply the function to the specified column
+    annotation_df["start_flank"] = annotation_df["start"].apply(
+        subtract_and_replace, flanking_int=args.flanking
+        )
+    annotation_df["end_flank"] = annotation_df["end"].apply(
+        subtract_and_replace, flanking_int=args.flanking
+        )
+
     bed_columns = [
         "seq_id",
         "start_flank",
@@ -666,6 +719,7 @@ def main():
         annotation_df, coordinates_df = parse_annotation_tsv(
             args.annotation_file, transcripts_df
         )
+
     # Read the transcript annotation file
     elif args.transcript_file:
         annotation_df, coordinates_df = parse_annotation_tsv(

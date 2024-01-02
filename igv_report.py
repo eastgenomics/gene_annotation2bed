@@ -1,3 +1,7 @@
+"""
+Generate an IGV report from a bed file.
+"""
+
 import json
 import subprocess
 
@@ -12,6 +16,8 @@ def create_igv_report(bed_file: str, maf_file: str,
     ----------
     bed_file : str
         file path to bed file.
+    maf_file : str
+        file path to maf file.
     genome : str
         genome name. i.e hg19.
     info_columns : list
@@ -20,6 +26,14 @@ def create_igv_report(bed_file: str, maf_file: str,
         title of the report.
     output_file : str
         file path to save the report.
+
+    Other required files:
+    ---------------------
+    ncibRefSeq.txt.gz and ncibRefSeq.txt.gz.tbi
+    Download from:
+    https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.txt.gz.tbi
+    https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.txt.gz
+    hg38 also available by changing hg19 to hg38 in the above links.
 
     Returns
     -------
@@ -31,8 +45,8 @@ def create_igv_report(bed_file: str, maf_file: str,
         {
             "name": 'Genes',
             "type": '',
-            "url": f'data/{genome}/refGene.txt.gz',
-            "indexURL": f'data/{genome}/refGene.txt.gz.tbi'
+            "url": f'data/{genome}/ncbiRefSeq.txt.gz',
+            "indexURL": f'data/{genome}/ncbiRefSeq.txt.gz.tbi'
         },
         {
             "name": 'BED',
@@ -58,32 +72,21 @@ def create_igv_report(bed_file: str, maf_file: str,
     print(index_result.returncode)
     print("Standard Output:", index_result.stdout)
     print("Standard Error:", index_result.stderr)
-    if reference_file:
-        print(f"Using provided reference {reference_file}")
-        maf_based_cmd = [
-            "create_report",
-            maf_file,
-            "--fasta", reference_file,
-            "--sequence", "1",
-            "--begin", "2",
-            "--end", "3",
-            "--tracks", maf_file,
-            "--track-config", "tracks_config.json",
-            "--title", title,
-            "--output", output_file
-        ]
 
-    elif genome:
-        print(f"Using genome reference {genome}")
-        maf_based_cmd = [
-            "create_report",
-            maf_file,
-            "--genome", genome,
-            "--tracks", maf_file,
-            "--track-config", "tracks_config.json",
-            "--title", title,
-            "--output", output_file
-        ]
+    print(f"Using provided reference {reference_file}")
+    maf_based_cmd = [
+        "create_report",
+        maf_file,
+        "--fasta", reference_file,
+        "--sequence", "1",
+        "--begin", "2",
+        "--end", "3",
+        "--tracks", maf_file,
+        "--track-config", "tracks_config.json",
+        "--title", title,
+        "--output", output_file,
+        # "--zero_based", "true" # add this flag if the bed file is zero based
+    ]
 
     result = subprocess.run(maf_based_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     print(result.returncode)
