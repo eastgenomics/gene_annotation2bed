@@ -221,24 +221,21 @@ class TestParseAnnotationTsv(unittest.TestCase):
         # Chromosome1:5000-10000	Oncogene
         # Chr19:1-100000	Non-Oncogene
         # chr17:1-100000	Oncogene
+        expected_data = {
+            'chromosome': ['1', '2', '1', '19', '17'],
+            'start': [5000000, 5000, 5000, 1, 1],
+            'end': [248956422, 10000, 10000, 100000, 100000],
+            'annotation': ['Non-Oncogene', 'Oncogene', 'Oncogene', 'Non-Oncogene', 'Oncogene'],
+            'gene': ['', '', '', '', '']
+        }
+        expected_df = pd.DataFrame(expected_data)
+        expected_df = expected_df.astype({
+            'start': "Int64", 'end': "Int64",
+            'chromosome': "str", 'annotation': "str"
+            })
+
+        pd.testing.assert_frame_equal(coordinates_df, expected_df)
         self.assertEqual(hgnc_merged_df.empty, True)
-        self.assertEqual(coordinates_df["chromosome"].iloc[0], "1")
-        self.assertEqual(coordinates_df["start"].iloc[0], 5000000)
-        self.assertEqual(coordinates_df["end"].iloc[0], 248956422)
-        self.assertEqual(coordinates_df["annotation"].iloc[0], "Non-Oncogene")
-        self.assertEqual(coordinates_df["chromosome"].iloc[1], "2")
-        self.assertEqual(coordinates_df["start"].iloc[1], 5000)
-        self.assertEqual(coordinates_df["end"].iloc[1], 10000)
-        self.assertEqual(coordinates_df["annotation"].iloc[1], "Oncogene")
-        self.assertEqual(coordinates_df["chromosome"].iloc[2], "1")
-        self.assertEqual(coordinates_df["chromosome"].iloc[3], "19")
-        self.assertEqual(coordinates_df["start"].iloc[3], 1)
-        self.assertEqual(coordinates_df["end"].iloc[3], 100000)
-        self.assertEqual(coordinates_df["annotation"].iloc[3], "Non-Oncogene")
-        self.assertEqual(coordinates_df["chromosome"].iloc[4], "17")
-        self.assertEqual(coordinates_df["start"].iloc[4], 1)
-        self.assertEqual(coordinates_df["end"].iloc[4], 100000)
-        self.assertEqual(coordinates_df["annotation"].iloc[4], "Oncogene")
 
 
     # def test_switched_coordinates_order(self):
