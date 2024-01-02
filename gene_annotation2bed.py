@@ -10,7 +10,13 @@ Example cmd (TODO: add example cmd once script is finalized):
 -o "test6"
 
 Current working cmd:
-/home/rswilson1/anaconda3/envs/Annotation_app/bin/python /home/rswilson1/Documents/Programming_project/gene_annotation2bed/gene_annotation2bed.py -pkl ./tests/test_data/refseq_gff_preprocessed.pkl  -ig data/mixed_dataset.tsv -ref_igv ./tests/test_data/hs37d5.fa -ref hg38 -f 5 --assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt -o "test_X"
+/home/rswilson1/anaconda3/envs/Annotation_app/bin/python
+/home/rswilson1/Documents/Programming_project/gene_annotation2bed/gene_annotation2bed.py
+-pkl ./tests/test_data/refseq_gff_preprocessed.pkl
+-ig data/mixed_dataset.tsv
+-ref_igv ./tests/test_data/hs37d5.fa -ref hg38 -f 5
+--assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt
+-o "test_X"
 """
 
 import argparse
@@ -278,8 +284,10 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         return empty_df
 
     try:
+        coordinates_df["chromosome"] = coordinates_df["chromosome"].astype('str')
         coordinates_df["start"] = coordinates_df["start"].astype('Int64')
         coordinates_df["end"] = coordinates_df["end"].astype('Int64')
+        coordinates_df["annotation"] = coordinates_df["annotation"].astype('str')
     except ValueError as e:
         print(f"Error: {e}")
 
@@ -633,12 +641,15 @@ def write_bed(annotation_df: pd.DataFrame,
     # Create BED file with flanking regions
     print("Creating BED file")
     print("Adding flanking regions")
-    #annotation_df["start_flank"] = annotation_df["start"] - args.flanking
+
     # Apply the function to the specified column
-    print(args.flanking)
-    annotation_df["start_flank"] = annotation_df["start"].apply(subtract_and_replace, flanking_int=args.flanking)
-    annotation_df["end_flank"] = annotation_df["end"].apply(subtract_and_replace, flanking_int=args.flanking)
-    # annotation_df["end_flank"] = annotation_df["end"] + args.flanking
+    annotation_df["start_flank"] = annotation_df["start"].apply(
+        subtract_and_replace, flanking_int=args.flanking
+        )
+    annotation_df["end_flank"] = annotation_df["end"].apply(
+        subtract_and_replace, flanking_int=args.flanking
+        )
+
     bed_columns = [
         "seq_id",
         "start_flank",
