@@ -10,8 +10,8 @@
     - Add logging
 
     Example cmd for quick ref:
-    construct_vcf.py -fasta /path/to/hs37d5.fa -b output_hg38_general_test1.bed
-
+    python construct_vcf.py -fasta tests/test_data/hs37d5.fa \
+        -b tests/test_data/example_bed_hg38.bed -o testing_DATE.vcf
     Returns
     -------
     None
@@ -136,23 +136,25 @@ class ConstructVCF():
         middle_nuc_variant = ConstructVCF.variant_dict[middle_nuc]
         end_nuc_variant = ConstructVCF.variant_dict[end_nuc]
 
-        # Define the VCF dataframe with the variant information for the start,
-        # middle, and end positions
-        data = {'#CHROM': [ncbi_chr, ncbi_chr, ncbi_chr],
-                'POS': [start, middle, end],
-                'ID': ['.', '.', '.'],
-                'REF': [start_nuc, middle_nuc, end_nuc],
-                'ALT': [start_nuc_variant, middle_nuc_variant, end_nuc_variant],
-                'QUAL': [100, 100, 100],
-                'FILTER': ['PASS', 'PASS', 'PASS'],
-                'INFO': [INFO_col, INFO_col, INFO_col],
-                'FORMAT': [FORMAT, FORMAT, FORMAT],
-                'test-123456-1-DNA-egg6.bam': [SAMPLE_col, SAMPLE_col, SAMPLE_col]
-                }
+        # Create list of dicts with VCF data of the variant information
+        # for the start, middle, and end positions
 
-        vcf_df = pd.DataFrame(data)
+        vcf_list = [
+            {'#CHROM': ncbi_chr, 'POS': start, 'ID': '.', 'REF': start_nuc,
+             'ALT': start_nuc_variant, 'QUAL': 100, 'FILTER': 'PASS',
+             'INFO': INFO_col, 'FORMAT': FORMAT,
+             'test-123456-1-DNA-egg6.bam': SAMPLE_col},
+            {'#CHROM': ncbi_chr, 'POS': middle, 'ID': '.', 'REF': middle_nuc,
+            'ALT': middle_nuc_variant, 'QUAL': 100, 'FILTER': 'PASS',
+            'INFO': INFO_col, 'FORMAT': FORMAT,
+            'test-123456-1-DNA-egg6.bam': SAMPLE_col},
+            {'#CHROM': ncbi_chr, 'POS': end, 'ID': '.', 'REF': end_nuc,
+            'ALT': end_nuc_variant, 'QUAL': 100, 'FILTER': 'PASS',
+            'INFO': INFO_col, 'FORMAT': FORMAT,
+            'test-123456-1-DNA-egg6.bam': SAMPLE_col}
+        ]
 
-        return vcf_df
+        return vcf_list
 
     def convert_bed_to_vcf(self):
         """
@@ -195,16 +197,16 @@ class ConstructVCF():
 
         output_df = pd.DataFrame(columns=columns)
 
-        for i, row in bed_file.iterrows():
-            # Fetch the nucleotide sequence from NCBI
-            # using the fetch_nucleotides function
-            seq_df = self.fetch_nucleotides(row, self.reference_path)
-            output_df = pd.concat([output_df, seq_df])
-
-        # sequences = bed_file.apply(lambda x: self.fetch_nucleotides(x, self.reference_path), axis=1)
-        # output_df = pd.concat([output_df, sequences])
-
-        # saving as tsv file
+        # for i, row in bed_file.iterrows():
+        #     # Fetch the nucleotide sequence from NCBI
+        #     # using the fetch_nucleotides function
+        #     seq_df = self.fetch_nucleotides(row, self.reference_path)
+        #     output_df = pd.concat([output_df, seq_df])
+        # Use apply to create series of vcf data
+        sequences = bed_file.apply(lambda x: self.fetch_nucleotides(x, self.reference_path), axis=1)
+        # Convert series to list, then flatten to make into df.
+        flattened_data = [item for sublist in sequences.tolist() for item in sublist]
+        output_df = pd.DataFrame(flattened_data, columns=columns)
         # Define the columns and their desired data types
         columns_to_convert = {
             '#CHROM': 'int64',
@@ -218,11 +220,11 @@ class ConstructVCF():
             'FORMAT': 'str',
             'test-123456-1-DNA-egg6.bam': 'str'
         }
-
         # Convert the data types of the specified columns
         output_df = output_df.astype(columns_to_convert)
         # reset index
         output_df.reset_index(drop=True, inplace=True)
+        # saving as tsv file
         output_df.to_csv(self.output_file, sep="\t", index=False)
         return output_df
 
