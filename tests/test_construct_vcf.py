@@ -73,7 +73,8 @@ class TestConstructVCF(unittest.TestCase):
 
             # Call the method
             result_df = vcf_obj.fetch_nucleotides(row, self.reference_path)
-
+            print("test")
+            print(result_df)
             # Assertions
             assert mock_faidx.call_args_list == [
                 ((self.reference_path, "14:2-2"), {}),
@@ -81,12 +82,12 @@ class TestConstructVCF(unittest.TestCase):
                 ((self.reference_path, "14:10-10"), {}),
             ]
             expected = [
-                (result_df.iloc[0]['REF'], 'A'),
-                (result_df.iloc[0]['ALT'], 'T'),
-                (result_df.iloc[1]['REF'], 'T'),
-                (result_df.iloc[1]['ALT'], 'A'),
-                (result_df.iloc[2]['REF'], 'C'),
-                (result_df.iloc[2]['ALT'], 'G')
+                (result_df[0]['REF'], 'A'),
+                (result_df[0]['ALT'], 'T'),
+                (result_df[1]['REF'], 'T'),
+                (result_df[1]['ALT'], 'A'),
+                (result_df[2]['REF'], 'C'),
+                (result_df[2]['ALT'], 'G')
             ]
 
             assert all([x[0] == x[1] for x in expected])
@@ -127,7 +128,6 @@ class TestConstructVCF(unittest.TestCase):
 
             # Call the method
             result_df = vcf_obj.fetch_nucleotides(row, self.reference_path)
-            # Subtests for each coordinate
 
             # Assertions
             assert mock_faidx.call_args_list == [
@@ -135,13 +135,14 @@ class TestConstructVCF(unittest.TestCase):
                 ((self.reference_path, "X:5-5"), {}),
                 ((self.reference_path, "X:10-10"), {}),
             ]
+
             expected = [
-                (result_df.iloc[0]['REF'], 'A'),
-                (result_df.iloc[0]['ALT'], 'T'),
-                (result_df.iloc[1]['REF'], 'T'),
-                (result_df.iloc[1]['ALT'], 'A'),
-                (result_df.iloc[2]['REF'], 'C'),
-                (result_df.iloc[2]['ALT'], 'G')
+                (result_df[0]['REF'], 'A'),
+                (result_df[0]['ALT'], 'T'),
+                (result_df[1]['REF'], 'T'),
+                (result_df[1]['ALT'], 'A'),
+                (result_df[2]['REF'], 'C'),
+                (result_df[2]['ALT'], 'G')
             ]
 
             assert all([x[0] == x[1] for x in expected])
@@ -209,6 +210,9 @@ class TestConstructVCF(unittest.TestCase):
 
         # Convert the data types of the specified columns
         expected_df = expected_df.astype(columns_to_convert)
+        print("compare dfs")
+        print(vcf_df)
+        print(expected_df)
         pd.testing.assert_frame_equal(expected_df, vcf_df)
 
 
