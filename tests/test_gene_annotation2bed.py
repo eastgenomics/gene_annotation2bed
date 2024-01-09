@@ -7,6 +7,8 @@ Tests for gene_annotation2bed.py functions
 Run: python -m pytest -v tests/test_gene_2annotation_script.py
 
 """
+from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
+                                 parse_annotation_tsv, parse_pickle)
 import os
 import sys
 from io import StringIO
@@ -18,12 +20,11 @@ import numpy as np
 
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
-from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
-                                 parse_annotation_tsv, parse_pickle)
 
 TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
 )
+
 
 class TestExtractHGNCID(unittest.TestCase):
     def test_extract_hgnc_id_found(self):
@@ -170,7 +171,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         try:
             self.gff_transcripts_df = parse_pickle(
                 f"{TEST_DATA_DIR}/refseq_gff_preprocessed.pkl"
-                )
+            )
         except FileNotFoundError:
             print("File not found! Ensure the preprocessed gff file is present.")
             sys.exit(1)
@@ -185,7 +186,8 @@ class TestParseAnnotationTsv(unittest.TestCase):
         sys.stdout = capturedOutput
 
         path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
-        hgnc_merged_df, coordinates_df = parse_annotation_tsv(path, self.gff_transcripts_df)
+        hgnc_merged_df, coordinates_df = parse_annotation_tsv(
+            path, self.gff_transcripts_df)
 
         # Check print output for coorect that all rows were separated.
         sys.stdout = sys.__stdout__
@@ -201,23 +203,31 @@ class TestParseAnnotationTsv(unittest.TestCase):
             with self.subTest(f"Test case {i} - {actual_output}"):
                 self.assertEqual(actual_output, expected_output)
 
-
     def test_parsing_transcripts_output(self):
         """
         Test parsing of transcripts from the annotation file.
             - Checks right output df is created with correct numbers of columns.
         """
         path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
-        hgnc_merged_df, coordinates_df = parse_annotation_tsv(path, self.gff_transcripts_df)
+        hgnc_merged_df, coordinates_df = parse_annotation_tsv(
+            path, self.gff_transcripts_df)
 
         # Check df output
         assert hgnc_merged_df.empty is False
         transcripts_list = ["NM_000124", "NM_000059", "NM_000546"]
+
         for i in transcripts_list:
-            transcript = hgnc_merged_df.loc[hgnc_merged_df['transcript_id'] == i]
-            assert transcript.empty is False, f"Transcript {i} not found"
-            assert transcript.shape[1] == 16  # correct number of columns
-        assert coordinates_df.empty is True
+            with self.subTest(transcript=i):
+                transcript = hgnc_merged_df.loc[hgnc_merged_df['transcript_id'] == i]
+                assert transcript.empty is False, f"Transcript {i} not found"
+                assert_failed_msg = (
+                    f"Transcript {i} has an incorrect number of columns:",
+                    f"{transcript.shape[1]}"
+                )
+                assert transcript.shape[1] == 16, assert_failed_msg
+
+        with self.subTest(dataframe="coordinates_df"):
+            assert coordinates_df.empty is True, "Coordinates DataFrame should be empty"
 
     def test_parsing_coordinates(self):
         """
@@ -227,7 +237,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         hgnc_merged_df, coordinates_df = parse_annotation_tsv(
             filename,
             self.gff_transcripts_df
-            )
+        )
 
         expected_data = {
             'chromosome': ['1', '2', '1', '19', '17'],
@@ -240,7 +250,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         expected_df = expected_df.astype({
             'start': "Int64", 'end': "Int64",
             'chromosome': "str", 'annotation': "str"
-            })
+        })
 
         pd.testing.assert_frame_equal(coordinates_df, expected_df)
         self.assertEqual(hgnc_merged_df.empty, True)
@@ -250,6 +260,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
     #     Test if handles switched start/end or incorrect start/end coordinates
     #     """
     #     pass
+
 
 if __name__ == '__main__':
     unittest.main()
