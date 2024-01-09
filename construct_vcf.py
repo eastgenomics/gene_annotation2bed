@@ -145,13 +145,13 @@ class ConstructVCF():
              'INFO': INFO_col, 'FORMAT': FORMAT,
              'test-123456-1-DNA-egg6.bam': SAMPLE_col},
             {'#CHROM': ncbi_chr, 'POS': middle, 'ID': '.', 'REF': middle_nuc,
-            'ALT': middle_nuc_variant, 'QUAL': 100, 'FILTER': 'PASS',
-            'INFO': INFO_col, 'FORMAT': FORMAT,
-            'test-123456-1-DNA-egg6.bam': SAMPLE_col},
+             'ALT': middle_nuc_variant, 'QUAL': 100, 'FILTER': 'PASS',
+             'INFO': INFO_col, 'FORMAT': FORMAT,
+             'test-123456-1-DNA-egg6.bam': SAMPLE_col},
             {'#CHROM': ncbi_chr, 'POS': end, 'ID': '.', 'REF': end_nuc,
-            'ALT': end_nuc_variant, 'QUAL': 100, 'FILTER': 'PASS',
-            'INFO': INFO_col, 'FORMAT': FORMAT,
-            'test-123456-1-DNA-egg6.bam': SAMPLE_col}
+             'ALT': end_nuc_variant, 'QUAL': 100, 'FILTER': 'PASS',
+             'INFO': INFO_col, 'FORMAT': FORMAT,
+             'test-123456-1-DNA-egg6.bam': SAMPLE_col}
         ]
 
         return vcf_list
