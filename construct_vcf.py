@@ -197,11 +197,6 @@ class ConstructVCF():
 
         output_df = pd.DataFrame(columns=columns)
 
-        # for i, row in bed_file.iterrows():
-        #     # Fetch the nucleotide sequence from NCBI
-        #     # using the fetch_nucleotides function
-        #     seq_df = self.fetch_nucleotides(row, self.reference_path)
-        #     output_df = pd.concat([output_df, seq_df])
         # Use apply to create series of vcf data
         sequences = bed_file.apply(lambda x: self.fetch_nucleotides(x, self.reference_path), axis=1)
         # Convert series to list, then flatten to make into df.
