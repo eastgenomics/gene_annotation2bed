@@ -175,9 +175,10 @@ class TestParseAnnotationTsv(unittest.TestCase):
             print("File not found! Ensure the preprocessed gff file is present.")
             sys.exit(1)
 
-    def test_parsing_transcripts(self):
+    def test_parsing_transcripts_prints(self):
         """
         Test parsing of transcripts from the annotation file.
+            - Checks prints for correct output.
         """
         # Set-up to capture stdout
         capturedOutput = StringIO()
@@ -199,6 +200,15 @@ class TestParseAnnotationTsv(unittest.TestCase):
         for i, (actual_output, expected_output) in enumerate(zip(print_output, expected_output_list), 1):
             with self.subTest(f"Test case {i} - {actual_output}"):
                 self.assertEqual(actual_output, expected_output)
+
+
+    def test_parsing_transcripts_output(self):
+        """
+        Test parsing of transcripts from the annotation file.
+            - Checks right output df is created with correct numbers of columns.
+        """
+        path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
+        hgnc_merged_df, coordinates_df = parse_annotation_tsv(path, self.gff_transcripts_df)
 
         # Check df output
         assert hgnc_merged_df.empty is False
