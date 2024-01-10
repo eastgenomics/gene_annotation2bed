@@ -22,12 +22,12 @@ Current working cmd:
 import argparse
 
 import argcomplete
-import igv_report as igv
 import numpy as np
 import pandas as pd
 import re
 
-import gff2pandas as gffpd
+from utils import gff2pandas as gffpd
+from utils import igv_report as igv
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
