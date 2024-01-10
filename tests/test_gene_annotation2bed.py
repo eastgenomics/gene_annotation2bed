@@ -7,8 +7,7 @@ Tests for gene_annotation2bed.py functions
 Run: python -m pytest -v tests/test_gene_2annotation_script.py
 
 """
-from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
-                                 parse_annotation_tsv, parse_pickle)
+
 import os
 import sys
 from io import StringIO
@@ -20,6 +19,9 @@ import numpy as np
 
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
+
+from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
+                                 parse_annotation_tsv, parse_pickle)
 
 TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
