@@ -1,21 +1,16 @@
 """
 This script takes a GFF3 file and an annotation file,
 producing a BED file for annotation of relevant transcripts.
-Example cmd (TODO: add example cmd once script is finalized):
-/home/rswilson1/anaconda3/envs/Annotation_app/bin/python
-/home/rswilson1/Documents/Programming_project/gene_annotation2bed.py
--gff "GCF_000001405.25_GRCh37.p13_genomic.gff"
--ig cancerGeneList_test.maf -ref "hg19" -f 5
---assembly_summary "GCF_000001405.25_GRCh37.p13_assembly_report.txt"
--o "test6"
+Example cmd:
+...
 
 Current working cmd:
-/home/rswilson1/anaconda3/envs/Annotation_app/bin/python
-/home/rswilson1/Documents/Programming_project/gene_annotation2bed/gene_annotation2bed.py
--pkl ./tests/test_data/refseq_gff_preprocessed.pkl
--ig data/mixed_dataset.tsv
--ref_igv ./tests/test_data/hs37d5.fa -ref hg38 -f 5
---assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt
+/home/rswilson1/anaconda3/envs/Annotation_app/bin/python \
+/home/rswilson1/Documents/Programming_project/gene_annotation2bed/bin/gene_annotation2bed.py \
+-pkl ./tests/test_data/refseq_gff_preprocessed.pkl \
+-ig data/mixed_dataset.tsv \
+-ref_igv ./tests/test_data/hs37d5.fa -ref hg38 -f 5 \
+--assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
 -o "test_X"
 """
 
@@ -27,7 +22,9 @@ import pandas as pd
 import re
 
 from utils import gff2pandas as gffpd
-from utils import igv_report as igv
+from scripts import igv_report as igv
+from utils import helper
+
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -50,12 +47,9 @@ def parse_args() -> argparse.Namespace:
     group1.add_argument("-gff", "--gff_file", help="Path to GFF file")
     group1.add_argument("-pkl", "--pickle", help="Import gff as pickle file")
 
-    group2 = parser.add_mutually_exclusive_group(required=True)
-    group2.add_argument(
-        "-ig", "--annotation_file", help="Path to the annotation file (TSV)"
-    )
-    group2.add_argument(
-        "-it", "--transcript_file", help="Path to transcript annotation file"
+    parser.add_argument(
+        "-ig", "--annotation_file", help="Path to the annotation file (TSV)",
+        required=True
     )
 
     parser.add_argument(
@@ -75,6 +69,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--assembly_summary", help="Path to assembly summary file", required=True
+    )
+    parser.add_argument(
+        "-gs", "--symbols_present", help="Flag to indicate gene symbols present",
+        required=False, action='store_true'
+    )
+    parser.add_argument(
+        '-dump', '--hgnc_dump_path', required=False,
+        help='Path to HGNC TSV file with HGNC information.'
     )
     # parser.add_argument('--report_name', help="Name for report")
     argcomplete.autocomplete(parser)
@@ -284,10 +286,12 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         return empty_df
 
     try:
-        coordinates_df["chromosome"] = coordinates_df["chromosome"].astype('str')
+        coordinates_df["chromosome"] = coordinates_df["chromosome"].astype(
+            'str')
         coordinates_df["start"] = coordinates_df["start"].astype('Int64')
         coordinates_df["end"] = coordinates_df["end"].astype('Int64')
-        coordinates_df["annotation"] = coordinates_df["annotation"].astype('str')
+        coordinates_df["annotation"] = coordinates_df["annotation"].astype(
+            'str')
     except ValueError as e:
         print(f"Error: {e}")
 
@@ -295,7 +299,8 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def parse_annotation_tsv(path: str,
-                         gff_transcripts_df: pd.DataFrame):
+                         gff_transcripts_df: pd.DataFrame,
+                         hgnc_dump=None):
     """
     Parse an annotation TSV file and separate it into dataframes for HGNC IDs,
     Transcript IDs, and Coordinates, then merge them with a GFF dataframe.
@@ -314,6 +319,7 @@ def parse_annotation_tsv(path: str,
         1. The merged dataframe for HGNC IDs and transcripts. (hgnc_merged_df)
         2. The coordinated dataframe for coordinates to be appended
            to a BED file later (coordinates_df).
+        3. The gene symbol dataframe for gene symbols to be appended.
     """
     df = pd.read_csv(path, sep="\t", dtype={
                      'ID': 'string', 'annotation': 'string'})
@@ -326,9 +332,12 @@ def parse_annotation_tsv(path: str,
     transcript_mask = df["ID"].str.contains(pattern_nm, case=True)
     pattern_chr = r'^(chr|chromosome|Chr|Chromosome)'
     coordinates_mask = df["ID"].str.contains(pattern_chr, case=False)
-
+    pattern_gene_symbol = r'\b[A-Z][A-Z0-9]+\b'  # r'^[A-Z]+[A-Z0-9]+'
+    gene_symbol_mask = df["ID"].str.contains(pattern_gene_symbol, case=True)
     # Use masks to filter the original dataframe
-    not_separated_rows = df[~(hgnc_mask | transcript_mask | coordinates_mask)]
+    not_separated_rows = df[
+        ~(hgnc_mask | transcript_mask | coordinates_mask | gene_symbol_mask)
+    ]
 
     # for hgcnID and transcriptID don't exist
     if not_separated_rows.empty:
@@ -340,6 +349,7 @@ def parse_annotation_tsv(path: str,
     hgnc_df = df[hgnc_mask]
     transcript_df = df[transcript_mask]
     coordinates_df = df[coordinates_mask]
+    gene_symbol_df = df[gene_symbol_mask]
     # set dtype for each column
     dtype_mapping_hgnc = {
         "ID": "Int64",
@@ -350,14 +360,18 @@ def parse_annotation_tsv(path: str,
         "ID": "str",
         "annotation": "category",
     }
-
     dtype_mapping_gff = {
         "hgnc_id": "Int64",
+    }
+    dtype_mapping_symbols = {
+        "ID": "str",
+        "annotation": "category",
     }
 
     hgnc_df = hgnc_df.astype(dtype_mapping_hgnc)
     transcript_df = transcript_df.astype(dtype_mapping_transcript)
     gff_transcripts_df = gff_transcripts_df.astype(dtype_mapping_gff)
+    gene_symbol_df = gene_symbol_df.astype(dtype_mapping_symbols)
     # Rename columns for clarity
     hgnc_df = hgnc_df.rename(columns={"ID": "hgnc_id"})
     transcript_df = transcript_df.rename(columns={"ID": "transcript_id"})
@@ -371,12 +385,91 @@ def parse_annotation_tsv(path: str,
         transcript_df["transcript_id"].str.split(".").str[0]
     )
 
+    # Convert gene symbols to hgnc_ids for concatenation
+    gene_symbol_df_corrected = None
+    if hgnc_dump is not None:
+        if not gene_symbol_df.empty:
+            corrected_gene_symbols = convert_symbols_to_hgnc_ids(
+                gene_symbol_df, hgnc_dump
+            )
+            gene_symbol_df_corrected = corrected_gene_symbols[
+                ['hgnc_id', 'annotation']
+            ].copy()
+            # Stripping "HGNC:" from the 'HGNC ID' column using apply and lambda
+            gene_symbol_df_corrected['hgnc_id'] = gene_symbol_df_corrected[
+                'hgnc_id'
+            ].apply(lambda x: x.split(":")[1])
+            dtype_mapping_symbols = {
+                "hgnc_id": "Int64",
+                "annotation": "category",
+            }
+            gene_symbol_df_corrected = gene_symbol_df_corrected.astype(
+                dtype_mapping_symbols
+                )
+
+        else:
+            print("No gene symbols found in the annotation file.")
+            gene_symbol_df_corrected = None
+    elif hgnc_dump is None:
+        if not gene_symbol_df.empty:
+            raise RuntimeError(
+                "No HGNC dump file provided."
+                "Gene symbols present will not be converted to HGNC IDs."
+            )
+        else:
+            gene_symbol_df_corrected = None
+    print(
+        f"Summary of gene symbol df after conversion: \n {gene_symbol_df_corrected}")
+    print(hgnc_df.head())
+    print(transcript_df.head())
+    return hgnc_df, transcript_df, coordinates_df, gene_symbol_df_corrected
+
+
+def merge_dataframes(hgnc_df: pd.DataFrame,
+                     transcript_df: pd.DataFrame,
+                     coordinates_df: pd.DataFrame,
+                     gff_transcripts_df: pd.DataFrame,
+                     gene_symbol_df: pd.DataFrame):
+    """
+    merge_dataframes function
+    Extract the corresponding transcripts from the GFF dataframe using HGNC_ID.
+    Then Merge based on the HGNC_ID field into final dataframes
+    with just coordinates and annotation.
+
+    Parameters
+    ----------
+    hgnc_df : pd.DataFrame
+        A dataframe containing HGNC information.
+    transcript_df : pd.DataFrame
+        A dataframe containing transcript information.
+    coordinates_df : pd.DataFrame
+        A dataframe containing coordinates information.
+    gff_transcripts_df : pd.DataFrame
+        A dataframe containing GFF information including transcript IDs.
+    gene_symbol_df : pd.DataFrame
+        A dataframe containing HGNC_IDs and annotation
+        for provided gene symbols.
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, pd.DataFrame]
+        A tuple containing two dataframes:
+        1. The merged dataframe for HGNC IDs, gene symbols and transcripts.
+        2. The coordinated dataframe for coordinates to be appended
+           to a BED file later (coordinates_df).
+    """
+
     # Merge the HGNC and Transcript dataframes with gff dataframe based on the 'ID' column
     merged_hgnc_df = gff_transcripts_df.merge(
         hgnc_df, on="hgnc_id", how="inner")
     merged_transcript_df = gff_transcripts_df.merge(
         transcript_df, on="transcript_id", how="inner"
     )
+    merged_symbol_df = gff_transcripts_df.merge(
+        gene_symbol_df, on="hgnc_id", how="inner")
+    # merged_symbol_df = gff_transcripts_df.merge(
+    #     gene_symbol_df, left_on='hgnc_id', right_on='hgnc_id', how='inner'
+    #     )
 
     # Find the rows dropped during the merge
     dropped_hgnc_rows = hgnc_df[~hgnc_df["hgnc_id"].isin(
@@ -385,6 +478,8 @@ def parse_annotation_tsv(path: str,
         ~transcript_df["transcript_id"].isin(
             merged_transcript_df["transcript_id"])
     ]
+    dropped_symbol_rows = gene_symbol_df[~gene_symbol_df["hgnc_id"].isin(
+        merged_symbol_df["hgnc_id"])]
     if not dropped_hgnc_rows.empty:
         print(f"Summary of dropped HGNC rows: \n {dropped_hgnc_rows}")
     else:
@@ -394,9 +489,13 @@ def parse_annotation_tsv(path: str,
             f"Summary of dropped Transcript rows: \n {dropped_transcript_rows}")
     else:
         print("All Transcript rows were merged successfully")
+    if not dropped_symbol_rows.empty:
+        print(f"Summary of dropped Symbol rows: \n {dropped_symbol_rows}")
+    else:
+        print("All Symbol rows were merged successfully")
     # Concatenate the merged dataframes
     hgnc_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
-
+    hgnc_merged_df = pd.concat([hgnc_merged_df, merged_symbol_df])
     # Coordinates dataframe split into columns
     coordinates_df = convert_coordinates(coordinates_df)
     return hgnc_merged_df, coordinates_df
@@ -442,6 +541,49 @@ def extract_hgnc_id(dbxref_str: str):
     except ValueError as e:
         print(f"Error: {e}")
         return hgnc_ids[0]
+
+
+def convert_row(row, hgnc_dump):
+    """
+    Convert gene symbols in the ID column of the DataFrame to HGNC ids.
+    Parameters
+    ----------
+    row : pd.DataFrame
+        Row of a DataFrame with 'ID' column containing gene symbols.
+    hgnc_dump : pd.DataFrame
+        HGNC DataFrame with 'Approved', 'Previous symbols',
+        'Alias symbols', 'HGNC ID', and 'Status' columns.
+
+    Returns
+    -------
+    pd.Series
+        Series with 'ID', 'annotation', 'hgnc_id', and 'Status' columns.
+    """
+    gene_symbol = row['ID']
+    hgnc_info = helper.find_hgnc_id(gene_symbol, hgnc_dump)
+    return pd.Series({
+        'ID': gene_symbol,
+        'annotation': row['annotation'],  # Preserve the 'Annotation' column
+        'hgnc_id': hgnc_info[1],
+        'Status': hgnc_info[2]
+    })
+
+
+def convert_symbols_to_hgnc_ids(df, hgnc_dump):
+    """Convert gene symbols in the ID column of the DataFrame to HGNC ids.
+
+    Args:
+        df (pd.DataFrame): DataFrame with 'ID' column containing gene symbols.
+        hgnc_dump (pd.DataFrame): HGNC DataFrame.
+
+    Returns:
+        pd.DataFrame: DataFrame with 'ID', 'annotation', 'HGNC ID', and 'Status' columns.
+    """
+    print("Converting gene symbols to HGNC IDs...")
+    print(f"Summary of gene symbol df before conversion: \n {df.head()}")
+    result_df = df.apply(lambda row: convert_row(row, hgnc_dump), axis=1)
+
+    return result_df
 
 
 def read_assembly_mapping(assembly_file: str):
@@ -630,7 +772,7 @@ def write_bed(annotation_df: pd.DataFrame,
     annotation_df : pd.DataFrame
         A dataframe containing annotation information.
     coordinates_df : pd.DataFrame
-        A dataframe containing coordinates information.
+        A dataframe containing coordinates and annotation info..
     args : Namespace
         A namespace containing command-line arguments and options.
 
@@ -646,10 +788,10 @@ def write_bed(annotation_df: pd.DataFrame,
     # Apply the function to the specified column
     annotation_df["start_flank"] = annotation_df["start"].apply(
         subtract_and_replace, flanking_int=args.flanking
-        )
+    )
     annotation_df["end_flank"] = annotation_df["end"].apply(
         subtract_and_replace, flanking_int=args.flanking
-        )
+    )
 
     bed_columns = [
         "seq_id",
@@ -714,22 +856,33 @@ def main():
         # Parse gff file
         transcripts_df = parse_gff(args.gff_file)
 
+    if args.symbols_present & (args.hgnc_dump_path is not None):
+        hgnc_dump = helper.parse_tsv(args.hgnc_dump_path)
+    elif args.symbols_present & (not args.hgnc_dump_path):
+        raise RuntimeError(
+            "No HGNC dump file provided."
+            "Gene symbols present will not be converted to HGNC IDs."
+        )
+    elif (not args.symbols_present) & args.hgnc_dump_path:
+        raise RuntimeError(
+            "HGNC dump file provided but -gs flag not set."
+            "Re-run with -gs flag to convert gene symbols to HGNC IDs."
+        )
+    else:
+        print("No gene symbols flag, returning None for hgnc_dump")
+        hgnc_dump = None
     # Read the annotation file into a pandas DataFrame
-    if args.annotation_file:
-        annotation_df, coordinates_df = parse_annotation_tsv(
-            args.annotation_file, transcripts_df
-        )
 
-    # Read the transcript annotation file
-    elif args.transcript_file:
-        annotation_df, coordinates_df = parse_annotation_tsv(
-            args.transcript_file, transcripts_df
-        )
-
-    # Merge NM entries with matching HGNC IDs
+    hgnc_df, transcript_df, coordinates_df, corrected_gene_symbols = parse_annotation_tsv(
+        args.annotation_file, transcripts_df, hgnc_dump
+    )
+    # Merge the dataframes
+    annotation_df, coordinates_df = merge_dataframes(
+        hgnc_df, transcript_df, coordinates_df, transcripts_df, corrected_gene_symbols
+    )
+        # Merge NM entries with matching HGNC IDs
     print("Merging annotation and gff dataframes")
     write_bed(annotation_df, coordinates_df, args)
-
     # Create an IGV report
     config_igv_report(args)
 
