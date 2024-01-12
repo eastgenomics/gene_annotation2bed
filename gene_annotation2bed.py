@@ -73,10 +73,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-gs", "--symbols_present", help="Flag to indicate gene symbols present",
         required=False, action='store_true'
-    )
+    ) # is this needed?
     parser.add_argument(
         '-dump', '--hgnc_dump_path', required=False,
-        help='Path to HGNC TSV file with HGNC information.'
+        help='Path to HGNC TSV file with HGNC information. \
+              Required if gene symbols are present.'
     )
     # parser.add_argument('--report_name', help="Name for report")
     argcomplete.autocomplete(parser)
@@ -200,8 +201,8 @@ def parse_gff(gff_file):
     gff_df = gff_df.astype(dtype_mapping)
 
     # Filter GFF DataFrame to select entries with 'NM' type
-    transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
-    return transcripts_df
+    gff_transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
+    return gff_transcripts_df
 
 
 def replace_chromosome_prefix_suffix(chromosome):
@@ -386,7 +387,6 @@ def parse_annotation_tsv(path: str,
     )
 
     # Convert gene symbols to hgnc_ids for concatenation
-    gene_symbol_df_corrected = None
     if hgnc_dump is not None:
         if not gene_symbol_df.empty:
             corrected_gene_symbols = convert_symbols_to_hgnc_ids(
@@ -409,7 +409,7 @@ def parse_annotation_tsv(path: str,
 
         else:
             print("No gene symbols found in the annotation file.")
-            gene_symbol_df_corrected = None
+            gene_symbol_df_corrected = gene_symbol_df
     elif hgnc_dump is None:
         if not gene_symbol_df.empty:
             raise RuntimeError(
@@ -417,18 +417,15 @@ def parse_annotation_tsv(path: str,
                 "Gene symbols present will not be converted to HGNC IDs."
             )
         else:
-            gene_symbol_df_corrected = None
-    print(
-        f"Summary of gene symbol df after conversion: \n {gene_symbol_df_corrected}")
-    print(hgnc_df.head())
-    print(transcript_df.head())
+            gene_symbol_df_corrected = gene_symbol_df
+
     return hgnc_df, transcript_df, coordinates_df, gene_symbol_df_corrected
 
 
 def merge_dataframes(hgnc_df: pd.DataFrame,
                      transcript_df: pd.DataFrame,
                      coordinates_df: pd.DataFrame,
-                     gff_transcripts_df: pd.DataFrame,
+                     gff_df: pd.DataFrame,
                      gene_symbol_df: pd.DataFrame):
     """
     merge_dataframes function
@@ -439,13 +436,14 @@ def merge_dataframes(hgnc_df: pd.DataFrame,
     Parameters
     ----------
     hgnc_df : pd.DataFrame
-        A dataframe containing HGNC information.
+        A dataframe containing HGNC IDs with annotation.
     transcript_df : pd.DataFrame
-        A dataframe containing transcript information.
+        A dataframe containing transcript information with annotation.
     coordinates_df : pd.DataFrame
-        A dataframe containing coordinates information.
-    gff_transcripts_df : pd.DataFrame
-        A dataframe containing GFF information including transcript IDs.
+        A dataframe containing coordinates with annotation.
+    gff_df : pd.DataFrame
+        A dataframe containing GFF information including transcript IDs
+        and HGNC_Ids and coordinate information for producing final bed.
     gene_symbol_df : pd.DataFrame
         A dataframe containing HGNC_IDs and annotation
         for provided gene symbols.
@@ -454,24 +452,39 @@ def merge_dataframes(hgnc_df: pd.DataFrame,
     -------
     Tuple[pd.DataFrame, pd.DataFrame]
         A tuple containing two dataframes:
-        1. The merged dataframe for HGNC IDs, gene symbols and transcripts.
-        2. The coordinated dataframe for coordinates to be appended
-           to a BED file later (coordinates_df).
+        1. final_merged_df
+            The merged dataframe for HGNC IDs, gene symbols and transcripts.
+        2. coordinates_df
+            The dataframe with the coordinates to be appended
+            to a BED file later.
     """
-
+    # Check if any of the dataframes are empty
+    # If so, create an empty dataframe with the correct columns
+    # for the merge to work.
+    if gene_symbol_df.empty:
+        print("No Gene Symbols found in the annotation file.")
+        gene_symbol_df = pd.DataFrame(columns=["hgnc_id", "annotation"])
+    if hgnc_df.empty:
+        print("No HGNC IDs found in the annotation file.")
+        hgnc_df = pd.DataFrame(columns=["hgnc_id", "annotation"])
+    if transcript_df.empty:
+        print("No Transcript IDs found in the annotation file.")
+        transcript_df = pd.DataFrame(columns=["transcript_id", "annotation"])
+    # Remove everything after '.' in the "transcript_id" column for gff resource
+    gff_df["transcript_id"] = (
+        gff_df["transcript_id"].str.split(".").str[0]
+    )
     # Merge the HGNC and Transcript dataframes with gff dataframe based on the 'ID' column
-    merged_hgnc_df = gff_transcripts_df.merge(
+    merged_hgnc_df = gff_df.merge(
         hgnc_df, on="hgnc_id", how="inner")
-    merged_transcript_df = gff_transcripts_df.merge(
+    merged_transcript_df = gff_df.merge(
         transcript_df, on="transcript_id", how="inner"
     )
-    merged_symbol_df = gff_transcripts_df.merge(
+    merged_symbol_df = gff_df.merge(
         gene_symbol_df, on="hgnc_id", how="inner")
-    # merged_symbol_df = gff_transcripts_df.merge(
-    #     gene_symbol_df, left_on='hgnc_id', right_on='hgnc_id', how='inner'
-    #     )
 
-    # Find the rows dropped during the merge
+    # Sanity Check
+    # Find any rows dropped during the merge
     dropped_hgnc_rows = hgnc_df[~hgnc_df["hgnc_id"].isin(
         merged_hgnc_df["hgnc_id"])]
     dropped_transcript_rows = transcript_df[
@@ -483,22 +496,28 @@ def merge_dataframes(hgnc_df: pd.DataFrame,
     if not dropped_hgnc_rows.empty:
         print(f"Summary of dropped HGNC rows: \n {dropped_hgnc_rows}")
     else:
-        print("All HGNC rows were merged successfully")
+        if not merged_hgnc_df.empty:
+            print("All HGNC rows were merged successfully")
     if not dropped_transcript_rows.empty:
         print(
             f"Summary of dropped Transcript rows: \n {dropped_transcript_rows}")
     else:
-        print("All Transcript rows were merged successfully")
+        if not merged_transcript_df.empty:
+            print("All Transcript rows were merged successfully")
     if not dropped_symbol_rows.empty:
         print(f"Summary of dropped Symbol rows: \n {dropped_symbol_rows}")
     else:
-        print("All Symbol rows were merged successfully")
-    # Concatenate the merged dataframes
-    hgnc_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
-    hgnc_merged_df = pd.concat([hgnc_merged_df, merged_symbol_df])
+        if not merged_symbol_df.empty:
+            print("All Symbol rows were merged successfully")
+
+    # Concatenate the merged dataframes to get a single merged dataframe.
+    final_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
+    final_merged_df = pd.concat([final_merged_df, merged_symbol_df])
+
     # Coordinates dataframe split into columns
     coordinates_df = convert_coordinates(coordinates_df)
-    return hgnc_merged_df, coordinates_df
+
+    return final_merged_df, coordinates_df
 
 
 def extract_hgnc_id(dbxref_str: str):
@@ -580,7 +599,6 @@ def convert_symbols_to_hgnc_ids(df, hgnc_dump):
         pd.DataFrame: DataFrame with 'ID', 'annotation', 'HGNC ID', and 'Status' columns.
     """
     print("Converting gene symbols to HGNC IDs...")
-    print(f"Summary of gene symbol df before conversion: \n {df.head()}")
     result_df = df.apply(lambda row: convert_row(row, hgnc_dump), axis=1)
 
     return result_df
@@ -821,10 +839,8 @@ def write_bed(annotation_df: pd.DataFrame,
     # Rename columns
     new_column_names = {"start_flank": "start", "end_flank": "end"}
     collapsed_df.rename(columns=new_column_names, inplace=True)
-    print(coordinates_df.head())
     collapsed_df = pd.concat(
         [collapsed_df, coordinates_df], axis=0, ignore_index=True)
-    print(collapsed_df.head(10))
     # Write the collapsed data to an output file
     output_file_name_maf = (
         f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
@@ -854,7 +870,7 @@ def main():
         print("Parsed pickle file")
     else:
         # Parse gff file
-        transcripts_df = parse_gff(args.gff_file)
+        transcripts_gff_df = parse_gff(args.gff_file)
 
     if args.symbols_present & (args.hgnc_dump_path is not None):
         hgnc_dump = helper.parse_tsv(args.hgnc_dump_path)
@@ -874,13 +890,14 @@ def main():
     # Read the annotation file into a pandas DataFrame
 
     hgnc_df, transcript_df, coordinates_df, corrected_gene_symbols = parse_annotation_tsv(
-        args.annotation_file, transcripts_df, hgnc_dump
+        args.annotation_file, transcripts_gff_df, hgnc_dump
     )
     # Merge the dataframes
     annotation_df, coordinates_df = merge_dataframes(
-        hgnc_df, transcript_df, coordinates_df, transcripts_df, corrected_gene_symbols
+        hgnc_df, transcript_df, coordinates_df, transcripts_gff_df, corrected_gene_symbols
     )
-        # Merge NM entries with matching HGNC IDs
+    # Merge NM entries with matching HGNC IDs
+
     print("Merging annotation and gff dataframes")
     write_bed(annotation_df, coordinates_df, args)
     # Create an IGV report
