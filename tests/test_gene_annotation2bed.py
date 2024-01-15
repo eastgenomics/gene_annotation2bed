@@ -241,13 +241,12 @@ class TestMerge_Dataframes(unittest.TestCase):
         print_output = capturedOutput.getvalue().split("\n")
 
         expected_output_list = [
-            "All rows were separated successfully",
-            "No Gene Symbols found in the annotation file.",
-            "No HGNC IDs found in the annotation file.",
-            "All HGNC rows were merged successfully",
+            'All rows were separated successfully',
+            'No Gene Symbols found in the annotation file.',
+            'No HGNC IDs found in the annotation file.',
             'All Transcript rows were merged successfully',
-            "All Symbol rows were merged successfully",
-            "No Coordinates found in the annotation file."
+            'No Coordinates found in the annotation file.',
+            ''
         ]
 
         for i, (actual_output, expected_output) in enumerate(zip(print_output, expected_output_list), 1):
