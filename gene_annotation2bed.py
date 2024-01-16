@@ -56,7 +56,7 @@ def parse_args() -> argparse.Namespace:
         "-o", "--output_file_suffix", help="Output file suffix", required=True
     )
     parser.add_argument(
-        "-ref", "--reference_genome", help="Reference genome (hg19/hg38)",
+        "-build", "--genome_build", help="Human reference genome (hg19/hg38)",
         required=True, choices=('hg19', 'hg38')
     )
     parser.add_argument(
@@ -730,7 +730,7 @@ def config_igv_report(args: argparse.Namespace):
     ----------
     args : argeparse object
         argeparse object with the following attributes:
-        reference_genome, output_file_suffix, gff_file/pickle_file,
+        genome_build, output_file_suffix, gff_file/pickle_file,
         annotation_file/transcript_file, assembly_file, and flanking.
 
     Returns
@@ -738,9 +738,9 @@ def config_igv_report(args: argparse.Namespace):
     None
     """
     # assign vars.
-    maf_file = f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
-    bed_file = f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
-    genome = args.reference_genome
+    maf_file = f"output_{args.genome_build}_{args.output_file_suffix}.maf"
+    bed_file = f"output_{args.genome_build}_{args.output_file_suffix}.bed"
+    genome = args.genome_build
     fasta_ref = args.reference_file_for_igv
     info_columns = []
     title = f"{args.output_file_suffix}_report"
@@ -843,10 +843,10 @@ def write_bed(annotation_df: pd.DataFrame,
         [collapsed_df, coordinates_df], axis=0, ignore_index=True)
     # Write the collapsed data to an output file
     output_file_name_maf = (
-        f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
+        f"output_{args.genome_build}_{args.output_file_suffix}.maf"
     )
     output_file_name_bed = (
-        f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
+        f"output_{args.genome_build}_{args.output_file_suffix}.bed"
     )
     collapsed_df.to_csv(output_file_name_maf, sep="\t",
                         header=True, index=False)
