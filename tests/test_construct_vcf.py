@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 import os
 from unittest.mock import patch
-from utils.construct_vcf import ConstructVCF, parse_args
+from scripts.construct_vcf import ConstructVCF, parse_args
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
