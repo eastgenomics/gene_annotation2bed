@@ -4,6 +4,10 @@
 To provide bed files for custom gene-level annotation with VEP.
 This custom script processes a list of ids (HGNC, transcript) or coordinates with associated annotation, into a comprehensive bed file for the corresponding refseq transcripts for each ID entry.
 
+i.e It could take a list of genes with associated annotation for example Gene A is an oncogene.
+It would then find all the corresponding transcripts for that gene and create a bed file for annotating VCFs using VEP. This removes the reliance on picking gene coordinates and directly annotates transcripts
+we use for our pipelines.
+
 ![Workflow diagram showing TSV containing IDs and annotation to bed file and how it is used in VEP and visualised in IGV using a VCF](https://raw.githubusercontent.com/eastgenomics/gene_annotation2bed/sprint_2/Workflow.png)
 
 ---
