@@ -525,10 +525,12 @@ def merge_overlapping(bed_df: pd.DataFrame):
 
     Returns
     -------
-    merged_df: dataframe
+    merged_df_final: dataframe
         dataframe of merged rows with columns: chromosome, start,
-        end, annotation
+        end, annotation. Index is reset
     """
+    if bed_df.empty:
+        raise RuntimeError("No BED entries found in the annotation file.")
     # Sort by chromosome, start, and end
     # This makes sure that overlapping regions are next to each other.
 
@@ -558,7 +560,9 @@ def merge_overlapping(bed_df: pd.DataFrame):
 
     merged_rows.append(current_row)  # Append the last merged row
     merged_df = pd.DataFrame(merged_rows)
-    return merged_df
+    merged_df_final = merged_df.reset_index(drop=True)
+
+    return merged_df_final
 
 
 def config_igv_report(args: argparse.Namespace):

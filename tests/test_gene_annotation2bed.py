@@ -24,7 +24,7 @@ sys.path.append('../gene_annotation2bed')
 from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
                                  parse_annotation_tsv, parse_pickle,
                                  merge_dataframes, write_bed,
-                                 subtract_and_replace)
+                                 subtract_and_replace, merge_overlapping)
 
 TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
@@ -450,7 +450,59 @@ class TestSubtractAndReplace(unittest.TestCase):
         assert subtract_and_replace(100000000000, 50000000000) == 50000000000
         assert subtract_and_replace(999999999999, 500000000000) == 499999999999
 
+class TestMergeOverlapping(unittest.TestCase):
+    def test_merge_overlapping_empty_dataframe(self):
+        """
+        Test merge_overlapping function with an empty dataframe.
+        """
+        empty_df = pd.DataFrame(columns=["seq_id", "start_flank", "end_flank", "hgnc_id", "annotation", "gene", "chromosome"])
+        with self.assertRaises(RuntimeError):
+            merged_df = merge_overlapping(empty_df)
 
+
+    def test_merge_overlapping_no_overlap(self):
+        """
+        Test merge_overlapping function with no overlapping regions.
+        """
+        bed_df = pd.DataFrame({
+            "seq_id": ["seq1", "seq2", "seq3"],
+            "start_flank": [100, 200, 300],
+            "end_flank": [150, 250, 350],
+            "hgnc_id": ["hgnc1", "hgnc2", "hgnc3"],
+            "annotation": ["anno1", "anno2", "anno3"],
+            "gene": ["gene1", "gene2", "gene3"],
+            "chromosome": ["chr1", "chr2", "chr3"]
+        })
+        merged_df = merge_overlapping(bed_df)
+        assert merged_df.equals(bed_df)
+
+    def test_merge_overlapping_with_overlap(self):
+        """
+        Test merge_overlapping function with overlapping regions.
+        """
+        bed_df = pd.DataFrame({
+            "seq_id": ["seq1", "seq1", "seq1", "seq2", "seq2"],
+            "start_flank": [100, 120, 140, 200, 220],
+            "end_flank": [150, 170, 180, 250, 270],
+            "hgnc_id": ["hgnc1", "hgnc1", "hgnc1", "hgnc4", "hgnc4"],
+            "annotation": ["anno1", "anno1", "anno1", "anno2", "anno2"],
+            "gene": ["gene1", "gene1", "gene1", "gene2", "gene2"],
+            "chromosome": ["chr1", "chr1", "chr1", "chr2", "chr2"]
+        })
+        merged_df = merge_overlapping(bed_df)
+
+        # Define the expected merged dataframe
+        expected_df = pd.DataFrame({
+            "seq_id": ["seq1", "seq2"],
+            "start_flank": [100, 200],
+            "end_flank": [180, 270],
+            "hgnc_id": ["hgnc1", "hgnc4"],
+            "annotation": ["anno1", "anno2"],
+            "gene": ["gene1", "gene2"],
+            "chromosome": ["chr1", "chr2"]
+        })
+
+        assert merged_df.equals(expected_df)
 
 if __name__ == '__main__':
     unittest.main()
