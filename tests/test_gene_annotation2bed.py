@@ -195,8 +195,35 @@ class TestParseAnnotationTsv(unittest.TestCase):
         sys.stdout = sys.__stdout__
         print_output = capturedOutput.getvalue().split("\n")
         expected_output = "All rows were separated successfully"
-        print(print_output)
+
         self.assertEqual(print_output[0], expected_output)
+
+    def test_empty_annotation_file(self):
+        """
+        Test parsing of transcripts from an empty annotation file.
+        Should raise error.
+        """
+        with self.assertRaises(RuntimeError):
+            path = f"{TEST_DATA_DIR}/empty.tsv"
+            hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+                path, self.gff_transcripts_df)
+
+
+    def test_empty_file(self):
+        """
+        test no pandas import as empty file.
+        """
+        expected_output = (
+            "The annotation file should be a tab-separated file with two columns: ",
+            "'ID' and 'annotation'"
+        )
+        path = f"{TEST_DATA_DIR}/emptyfile.tsv"
+        with self.assertRaises(pd.errors.EmptyDataError):
+            path = f"{TEST_DATA_DIR}/empty_file.tsv"
+            hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+                path, self.gff_transcripts_df)
+
+
 
 class TestMerge_Dataframes(unittest.TestCase):
     """
@@ -209,7 +236,7 @@ class TestMerge_Dataframes(unittest.TestCase):
         Set up the test data. Load the preprocessed gff file.
         If not present then exit.
         # TODO: Add a test for the parsing of the gff file.
-        # run script to produce gff if not present?
+        # run script to produce pkl file for gff if not present.
         """
         try:
             self.gff_transcripts_df = parse_pickle(
@@ -238,7 +265,7 @@ class TestMerge_Dataframes(unittest.TestCase):
         # Check print output for coorect that all rows were separated.
         sys.stdout = sys.__stdout__
         print_output = capturedOutput.getvalue().split("\n")
-        print(print_output)
+
         expected_output_list = [
             'All rows were separated successfully',
             'No HGNC IDs found in the annotation file.', # missing transcript line?

@@ -307,7 +307,13 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
         2. The coordinated dataframe for coordinates to be appended
            to a BED file later (coordinates_df).
     """
-    df = pd.read_csv(path, sep="\t", dtype={'ID': 'string', 'annotation': 'string'})
+    try:
+        df = pd.read_csv(path, sep="\t", dtype={'ID': 'string', 'annotation': 'string'})
+    except Exception as err:
+        print("The annotation file should be a tab-separated file with two columns: "
+              "'ID' and 'annotation'")
+        raise err
+
     assert 'ID' in df.columns, 'The annotation file does not contain an "ID" column'
     if df.empty:
         raise RuntimeError("The annotation file is empty.")
