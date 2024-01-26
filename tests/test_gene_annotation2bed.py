@@ -21,7 +21,8 @@ import numpy as np
 sys.path.append('../gene_annotation2bed')
 
 from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
-                                 parse_annotation_tsv, parse_pickle)
+                                 parse_annotation_tsv, parse_pickle,
+                                 merge_dataframes)
 
 TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
@@ -157,10 +158,50 @@ class TestConvertCoordinates(unittest.TestCase):
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
-
 class TestParseAnnotationTsv(unittest.TestCase):
     """
     Tests for checking correct parsing of the annotation resource.
+    """
+
+    def setUp(self):
+        """
+        Set up the test data. Load the preprocessed gff file.
+        If not present then exit.
+        # TODO: Add a test for the parsing of the gff file.
+        # run script to produce gff if not present?
+        """
+        try:
+            self.gff_transcripts_df = parse_pickle(
+                f"{TEST_DATA_DIR}/refseq_gff_preprocessed.pkl"
+            )
+        except FileNotFoundError:
+            print("File not found! Ensure the preprocessed gff file is present.")
+            sys.exit(1)
+
+    def test_parsing_prints(self):
+        """
+        Test parsing of transcripts from the annotation file.
+        - Checks prints for correct output.
+        """
+        # Set-up to capture stdout
+        capturedOutput = StringIO()
+        sys.stdout = capturedOutput
+
+        path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
+        hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+            path, self.gff_transcripts_df)
+
+        # Check print output for coorect that all rows were separated.
+        sys.stdout = sys.__stdout__
+        print_output = capturedOutput.getvalue().split("\n")
+        expected_output = "All rows were separated successfully"
+        print(print_output)
+        self.assertEqual(print_output[0], expected_output)
+
+class TestMerge_Dataframes(unittest.TestCase):
+    """
+    Tests for merging of gff dataframe with transcripts
+    and the HGNC ID dataframe, Gene Symbol dataframe and Coordinates dataframe.
     """
 
     def setUp(self):
@@ -188,17 +229,21 @@ class TestParseAnnotationTsv(unittest.TestCase):
         sys.stdout = capturedOutput
 
         path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
-        hgnc_merged_df, coordinates_df = parse_annotation_tsv(
+        hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
             path, self.gff_transcripts_df)
-
+        # Merge the dataframes
+        annotation_df, coordinates_df = merge_dataframes(
+            hgnc_df, transcript_df, coordinates_df, self.gff_transcripts_df
+        )
         # Check print output for coorect that all rows were separated.
         sys.stdout = sys.__stdout__
         print_output = capturedOutput.getvalue().split("\n")
+        print(print_output)
         expected_output_list = [
-            "All rows were separated successfully",
-            "All HGNC rows were merged successfully",
-            "All Transcript rows were merged successfully",
-            "No Coordinates found in the annotation file."
+            'All rows were separated successfully',
+            'No HGNC IDs found in the annotation file.', # missing transcript line?
+            'No Coordinates found in the annotation file.',
+            ''
         ]
 
         for i, (actual_output, expected_output) in enumerate(zip(print_output, expected_output_list), 1):
@@ -211,16 +256,19 @@ class TestParseAnnotationTsv(unittest.TestCase):
             - Checks right output df is created with correct numbers of columns.
         """
         path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
-        hgnc_merged_df, coordinates_df = parse_annotation_tsv(
+        hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
             path, self.gff_transcripts_df)
-
+        # Merge the dataframes
+        annotation_df, coordinates_df = merge_dataframes(
+            hgnc_df, transcript_df, coordinates_df, self.gff_transcripts_df
+        )
         # Check df output
-        assert hgnc_merged_df.empty is False
+        assert annotation_df.empty is False
         transcripts_list = ["NM_000124", "NM_000059", "NM_000546"]
 
         for i in transcripts_list:
             with self.subTest(transcript=i):
-                transcript = hgnc_merged_df.loc[hgnc_merged_df['transcript_id'] == i]
+                transcript = annotation_df.loc[annotation_df['transcript_id'] == i]
                 assert transcript.empty is False, f"Transcript {i} not found"
                 assert_failed_msg = (
                     f"Transcript {i} has an incorrect number of columns:",
@@ -235,10 +283,12 @@ class TestParseAnnotationTsv(unittest.TestCase):
         """
         Test parsing of raw coordinates from the annotation file.
         """
-        filename = f"{TEST_DATA_DIR}/coordinates_anno_test.tsv"
-        hgnc_merged_df, coordinates_df = parse_annotation_tsv(
-            filename,
-            self.gff_transcripts_df
+        path = f"{TEST_DATA_DIR}/coordinates_anno_test.tsv"
+        hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+            path, self.gff_transcripts_df)
+        # Merge the dataframes
+        annotation_df, coordinates_df = merge_dataframes(
+            hgnc_df, transcript_df, coordinates_df, self.gff_transcripts_df
         )
 
         expected_data = {
@@ -255,7 +305,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         })
 
         pd.testing.assert_frame_equal(coordinates_df, expected_df)
-        self.assertEqual(hgnc_merged_df.empty, True)
+        self.assertEqual(annotation_df.empty, True)
 
     # def test_switched_coordinates_order(self):
     #     """

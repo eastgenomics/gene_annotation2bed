@@ -1,7 +1,7 @@
 """
 Test the igv_report module
 """
-from utils import igv_report
+from scripts import igv_report
 
 # def test_create_igv_report():
 #     """
