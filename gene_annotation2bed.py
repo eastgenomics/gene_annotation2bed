@@ -639,10 +639,22 @@ def write_bed(annotation_df: pd.DataFrame,
     bed file: (file) bed file containing the relevant transcripts
         for annotation for visualisation in igv.
     """
+    # Check data
+    if annotation_df.empty and coordinates_df.empty:
+        raise RuntimeError("No annotation or coordinates found in the annotation file.")
+    if annotation_df.empty:
+        print("No annotation found in the annotation file.")
+        annotation_df = pd.DataFrame(
+            columns=["hgnc_id", "annotation", "gene", "transcript_id"]
+        )
+    if coordinates_df.empty:
+        print("No coordinates found in the annotation file.")
+        coordinates_df = pd.DataFrame(
+            columns=["chromosome", "start", "end", "annotation", "gene"]
+        )
     # Create BED file with flanking regions
     print("Creating BED file")
     print("Adding flanking regions")
-
     # Apply the function to the specified column
     annotation_df["start_flank"] = annotation_df["start"].apply(
         subtract_and_replace, flanking_int=args.flanking

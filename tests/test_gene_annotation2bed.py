@@ -12,6 +12,7 @@ import os
 import sys
 from io import StringIO
 
+import argparse
 import unittest
 import pandas as pd
 import pytest
@@ -22,7 +23,8 @@ sys.path.append('../gene_annotation2bed')
 
 from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
                                  parse_annotation_tsv, parse_pickle,
-                                 merge_dataframes)
+                                 merge_dataframes, write_bed,
+                                 subtract_and_replace)
 
 TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
@@ -339,6 +341,115 @@ class TestMerge_Dataframes(unittest.TestCase):
     #     Test if handles switched start/end or incorrect start/end coordinates
     #     """
     #     pass
+
+
+class TestWriteBed(unittest.TestCase):
+    """
+    Tests for writing the bed file function.
+    """
+    def setUp(self) -> None:
+        self.assembly_file = "data/GCF_000001405.25_GRCh37.p13_assembly_report.txt"
+        return super().setUp()
+
+    def test_write_bed_creates_file(self):
+        """
+        Test if the write_bed function creates the correct file.
+        """
+        # Create sample dataframes and args
+        annotation_df = pd.read_csv("example_final_merged_df.csv")
+        coordinates_df = pd.read_csv("example_coordinates_df.csv")
+        args = argparse.Namespace(
+            flanking=10,
+            assembly_summary=self.assembly_file,
+            genome_build="hg38",
+            output_file_suffix="test"
+        )
+
+        # Call the function
+        write_bed(annotation_df, coordinates_df, args)
+
+        # Check if the output files are created
+        assert os.path.exists("output_hg38_test.bed")
+        assert os.path.exists("output_hg38_test.maf")
+
+        # Clean up - delete the generated files
+        os.remove("output_hg38_test.bed")
+        os.remove("output_hg38_test.maf")
+
+
+    def test_write_bed_edge_cases(self):
+        """
+        Test empty files for write_bed function.
+        Check error raised and files not created.
+        """
+        with self.assertRaises(RuntimeError):
+            # Test with empty annotation df
+            annotation_df = pd.DataFrame()
+            coordinates_df = pd.read_csv("example_coordinates_df.csv")
+            args = argparse.Namespace()
+
+            # Call the function and check if it raises an error
+            write_bed(annotation_df, coordinates_df, args)
+
+        # Check if the output files are not created
+        assert not os.path.exists("output_.bed")
+        assert not os.path.exists("output_.maf")
+
+
+    # Additional tests for normal function with example annotation df and coordinates df
+    def test_write_bed_normal_function(self):
+        """
+        Test the write_bed function with example annotation and coordinates dataframes.
+        """
+        # Load example dataframes from files
+        annotation_df = pd.read_csv("example_final_merged_df.csv")
+        coordinates_df = pd.read_csv("example_coordinates_df.csv")
+        args = argparse.Namespace(
+            flanking=10,
+            assembly_summary=self.assembly_file,
+            genome_build="hg38",
+            output_file_suffix="test"
+        )
+
+        # Call the function
+        write_bed(annotation_df, coordinates_df, args)
+
+        # Check if the output files are created
+        assert os.path.exists("output_hg38_test.bed")
+        assert os.path.exists("output_hg38_test.maf")
+
+        # Clean up - delete the generated files
+        os.remove("output_hg38_test.bed")
+        os.remove("output_hg38_test.maf")
+
+
+class TestSubtractAndReplace(unittest.TestCase):
+    """
+    Tests for subtract_and_replace function.
+    """
+    def test_subtract_and_replace_positive(self):
+        """
+        Test subtract_and_replace function with positive integers.
+        """
+        assert subtract_and_replace(10, 5) == 5
+        assert subtract_and_replace(100, 50) == 50
+
+
+    def test_subtract_and_replace_zero_and_negative(self):
+        """
+        Test subtract_and_replace function with zero and negative integers.
+        """
+        assert subtract_and_replace(0, 5) == 1  # Minimum value is 1 when input is 0
+        assert subtract_and_replace(3, 5) == 1  # Minimum value is 1 when input is less than 5
+
+
+    def test_subtract_and_replace_large_integers(self):
+        """
+        Test subtract_and_replace function with very large integers.
+        """
+        assert subtract_and_replace(100000000000, 50000000000) == 50000000000
+        assert subtract_and_replace(999999999999, 500000000000) == 499999999999
+
 
 
 if __name__ == '__main__':
