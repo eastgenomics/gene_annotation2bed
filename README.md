@@ -30,7 +30,7 @@ This custom script processes a list of ids (HGNC, transcript) or coordinates wit
 - `-o`, `output` (`str`): Output file suffix, required for specifying the suffix for the generated output files.
 - `-build`, `--genome_build` (`str`): Reference genome build (hg19/hg38), choose either 'hg19' or 'hg38' based on your requirements.
 - `-f`, `--flanking` (`int`): Flanking size, an integer value representing the size of flanking regions for each gene, transcript or coordinates provided.
-- `--assembly_summary` (`str`): Path to assembly summary file, necessary for the app to gather assembly information.
+- `--assembly_summary` (`str`): Path to assembly summary file, necessary for the app to gather assembly information, this allows for the script to map between refseq accessions and chromosomes.
 - `-gff` (`str`): Path to GFF file containing all relevant transcripts for assay, available in 001_reference i.e. GCF_000001405.25_GRCh37.p13_genomic.gff.
 
 ### Useful ones
@@ -142,7 +142,6 @@ and bed file aligned with the respecive annotation.
 │   └── test_igv_report.py
 │
 ├── utils
-│   ├── configure_gff.py
 │   ├── gff2pandas.py
 │   ├── __init__.py
 └── Workflow.png
