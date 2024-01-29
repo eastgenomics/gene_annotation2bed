@@ -81,7 +81,7 @@ def parse_gff(gff_file):
     Import GFF3 file and convert to pandas DataFrame.
 
     The GFF3 file is imported into a dataframe and then all the attributes
-    in the attributes column are split into seperate columns.
+    in the attributes column are split into separate columns.
     It then drops many of the additional fields from the attributes column
     which are not needed to reduce memory footprint.
     The dataframe is then filtered to only include entries which have the
@@ -153,9 +153,7 @@ def parse_gff(gff_file):
     """
     transcripts_gff = gffpd.read_gff3(gff_file)
     gff_df = transcripts_gff.attributes_to_columns()
-    # drop columns that are not needed to reduce memory footprint
-    gff_df = gff_df.drop(
-        [
+    columns_to_drop = [
             "Gap", "Is_circular", "Name", "Note", "Parent", "Target", "anticodon",
             "assembly_bases_aln", "assembly_bases_seq", "bit_score", "blast_aligner",
             "blast_score", "bound_moiety", "chromosome", "codons", "common_component",
@@ -174,9 +172,11 @@ def parse_gff(gff_file):
             "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq",
             "satellite", "splices", "standard_name", "start_range", "tag",
             "tissue-type", "transl_except", "transl_table", "weighted_identity",
-        ],
-        axis=1,
-    )
+        ]
+    # create a filter to drop columns
+    drop_filter = gff_df.filter(columns_to_drop)
+    # drop columns that are not needed to reduce memory footprint
+    gff_df.drop(drop_filter, inplace=True, axis=1)
 
     # Apply extract_hgnc_id function to create 'hgnc_id' column
     gff_df["hgnc_id"] = gff_df["Dbxref"].apply(extract_hgnc_id)
@@ -326,7 +326,8 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
     if not_separated_rows.empty:
         print("All rows were separated successfully")
     else:
-        print(f"These rows were not separated: \n {not_separated_rows}")
+        print(f"These rows were not separated into HGNC ids, transcripts or coordinates. \n" \
+              f"These rows will not be present in the final bed file: \n {not_separated_rows}")
 
     hgnc_df = df[hgnc_mask]
     transcript_df = df[transcript_mask]
@@ -674,7 +675,6 @@ def write_bed(annotation_df: pd.DataFrame,
     ]
     bed_df = annotation_df[bed_columns]
     bed_df = bed_df.reindex()
-    print(f"Summary of BED file df before collapsing \n {bed_df.head()}")
     # Extract chromosome from seqid and create the 'chromosome' column
     accession_to_chromosome = read_assembly_mapping(args.assembly_summary)
     # Add a new column 'chromosome' by mapping accession to chromosome identifier
@@ -736,7 +736,6 @@ def main():
     )
 
     # Merge NM entries with matching HGNC IDs
-    print("Merging annotation and gff dataframes")
     write_bed(annotation_df, coordinates_df, args)
 
     # Create an IGV report
