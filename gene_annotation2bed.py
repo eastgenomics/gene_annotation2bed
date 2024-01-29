@@ -270,11 +270,8 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         ]
 
     except Exception as err:
-        print(f"Error: {err}")
         print("Please check the format of the coordinates in the annotation file.")
-        empty_df = pd.DataFrame(
-            columns=["chromosome", "start", "end", "annotation", "gene"])
-        return empty_df
+        raise RuntimeError(f"Error: {err}")
 
     try:
         coordinates_df["chromosome"] = coordinates_df["chromosome"].astype('str')
