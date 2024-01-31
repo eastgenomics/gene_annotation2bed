@@ -163,25 +163,25 @@ def parse_gff(gff_file):
     transcripts_gff = gffpd.read_gff3(gff_file)
     gff_df = transcripts_gff.attributes_to_columns()
     columns_to_drop = [
-            "Gap", "Is_circular", "Name", "Note", "Parent", "Target", "anticodon",
-            "assembly_bases_aln", "assembly_bases_seq", "bit_score", "blast_aligner",
-            "blast_score", "bound_moiety", "chromosome", "codons", "common_component",
-            "consensus_splices", "country", "description", "direction", "e_value",
-            "end_range", "exception", "exon_identity", "exon_number", "experiment",
-            "feat_class", "filter_score", "for_remapping", "function", "gap_count",
-            "gene_biotype", "gene_synonym", "genome", "hsp_percent_coverage",
-            "identity", "idty", "inference", "inversion_merge_aligner",
-            "isolation-source", "lxr_locAcc_currStat_120", "lxr_locAcc_currStat_35",
-            "map", "matchable_bases", "matched_bases", "matches", "merge_aligner",
-            "mobile_element_type", "mol_type", "not_for_annotation", "note",
-            "num_ident", "num_mismatch", "number", "partial", "pct_coverage",
-            "pct_coverage_hiqual", "pct_identity_gap", "pct_identity_gapopen_only",
-            "pct_identity_ungap", "product", "product_coverage", "protein_id",
-            "pseudo", "rank", "recombination_class", "regulatory_class",
-            "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq",
-            "satellite", "splices", "standard_name", "start_range", "tag",
-            "tissue-type", "transl_except", "transl_table", "weighted_identity",
-        ]
+        "Gap", "Is_circular", "Name", "Note", "Parent", "Target", "anticodon",
+        "assembly_bases_aln", "assembly_bases_seq", "bit_score", "blast_aligner",
+        "blast_score", "bound_moiety", "chromosome", "codons", "common_component",
+        "consensus_splices", "country", "description", "direction", "e_value",
+        "end_range", "exception", "exon_identity", "exon_number", "experiment",
+        "feat_class", "filter_score", "for_remapping", "function", "gap_count",
+        "gene_biotype", "gene_synonym", "genome", "hsp_percent_coverage",
+        "identity", "idty", "inference", "inversion_merge_aligner",
+        "isolation-source", "lxr_locAcc_currStat_120", "lxr_locAcc_currStat_35",
+        "map", "matchable_bases", "matched_bases", "matches", "merge_aligner",
+        "mobile_element_type", "mol_type", "not_for_annotation", "note",
+        "num_ident", "num_mismatch", "number", "partial", "pct_coverage",
+        "pct_coverage_hiqual", "pct_identity_gap", "pct_identity_gapopen_only",
+        "pct_identity_ungap", "product", "product_coverage", "protein_id",
+        "pseudo", "rank", "recombination_class", "regulatory_class",
+        "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq",
+        "satellite", "splices", "standard_name", "start_range", "tag",
+        "tissue-type", "transl_except", "transl_table", "weighted_identity",
+    ]
     # create a filter to drop columns
     drop_filter = gff_df.filter(columns_to_drop)
     # drop columns that are not needed to reduce memory footprint
@@ -283,10 +283,12 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         raise RuntimeError(f"Error: {err}")
 
     try:
-        coordinates_df["chromosome"] = coordinates_df["chromosome"].astype('str')
+        coordinates_df["chromosome"] = coordinates_df["chromosome"].astype(
+            'str')
         coordinates_df["start"] = coordinates_df["start"].astype('Int64')
         coordinates_df["end"] = coordinates_df["end"].astype('Int64')
-        coordinates_df["annotation"] = coordinates_df["annotation"].astype('str')
+        coordinates_df["annotation"] = coordinates_df["annotation"].astype(
+            'str')
     except ValueError as e:
         print(f"Error: {e}")
 
@@ -314,7 +316,8 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
            to a BED file later (coordinates_df).
     """
     try:
-        df = pd.read_csv(path, sep="\t", dtype={'ID': 'string', 'annotation': 'string'})
+        df = pd.read_csv(path, sep="\t", dtype={
+                         'ID': 'string', 'annotation': 'string'})
     except Exception as err:
         print(err)
         print("Please check the format of the annotation file.")
@@ -335,7 +338,7 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
     if not_separated_rows.empty:
         print("All rows were separated successfully")
     else:
-        print(f"These rows were not separated into HGNC ids, transcripts or coordinates. \n" \
+        print(f"These rows were not separated into HGNC ids, transcripts or coordinates. \n"
               f"These rows will not be present in the final bed file: \n {not_separated_rows}")
 
     hgnc_df = df[hgnc_mask]
@@ -354,8 +357,10 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
     transcript_df = transcript_df.rename(columns={"ID": "transcript_id"})
     coordinates_df = coordinates_df.rename(columns={"ID": "Coordinates"})
 
-    gff_transcripts_df["transcript_id"] = gff_transcripts_df["transcript_id"].str.split(".").str[0]
-    transcript_df["transcript_id"] = transcript_df["transcript_id"].str.split(".").str[0]
+    gff_transcripts_df["transcript_id"] = gff_transcripts_df["transcript_id"].str.split(
+        ".").str[0]
+    transcript_df["transcript_id"] = transcript_df["transcript_id"].str.split(
+        ".").str[0]
 
     return hgnc_df, transcript_df, coordinates_df
 
@@ -399,14 +404,14 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
 
     gff_df["transcript_id"] = gff_df["transcript_id"].str.split(".").str[0]
     merged_hgnc_df = gff_df.merge(hgnc_df, on="hgnc_id", how="inner")
-    merged_transcript_df = gff_df.merge(transcript_df, on="transcript_id", how="inner")
+    merged_transcript_df = gff_df.merge(
+        transcript_df, on="transcript_id", how="inner")
 
     final_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
 
     coordinates_df = convert_coordinates(coordinates_df)
 
     return final_merged_df, coordinates_df
-
 
 
 def extract_hgnc_id(dbxref_str: str):
@@ -652,7 +657,8 @@ def write_bed(annotation_df: pd.DataFrame,
     """
     # Check data
     if annotation_df.empty and coordinates_df.empty:
-        raise RuntimeError("No annotation or coordinates found in the annotation file.")
+        raise RuntimeError(
+            "No annotation or coordinates found in the annotation file.")
     if annotation_df.empty:
         print("No annotation found in the annotation file.")
         annotation_df = pd.DataFrame(
@@ -669,10 +675,10 @@ def write_bed(annotation_df: pd.DataFrame,
     # Apply the function to the specified column
     annotation_df["start_flank"] = annotation_df["start"].apply(
         subtract_and_replace, flanking_int=args.flanking
-        )
+    )
     annotation_df["end_flank"] = annotation_df["end"].apply(
         subtract_and_replace, flanking_int=args.flanking
-        )
+    )
 
     bed_columns = [
         "seq_id",
@@ -737,7 +743,7 @@ def main():
     # Read the annotation file into a pandas DataFrame
     hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
         args.annotation_file, gff_transcripts_df
-        )
+    )
     # Merge the annotation DataFrame with the GFF DataFrame
     # Concat hgnc and transcript dataframes
     annotation_df, coordinates_df = merge_dataframes(
