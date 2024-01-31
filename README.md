@@ -30,21 +30,17 @@ we use for our pipelines.
 ## What inputs are required for this app to run?
 
 ### Required
-- `-ig`, `--annotation_file` (`str`): Path to the annotation file (TSV), this file is essential for the app to execute successfully.
+- `-ann`, `--annotation_file` (`str`): Path to the annotation file (TSV), this file is essential for the app to execute successfully.
 - `-o`, `output` (`str`): Output file suffix, required for specifying the suffix for the generated output files.
 - `-build`, `--genome_build` (`str`): Reference genome build (hg19/hg38), choose either 'hg19' or 'hg38' based on your requirements.
-- `-f`, `--flanking` (`int`): Flanking size, an integer value representing the size of flanking regions for each gene, transcript or coordinates provided.
-- `--assembly_summary` (`str`): Path to assembly summary file, necessary for the app to gather assembly information, this allows for the script to map between refseq accessions and chromosomes.
+- `-f`, `--flanking` (`int`): Flanking size, an integer value representing the size of flanking regions for each gene, transcript or coordinates provided. Default = 0.
+- `-as`, `--assembly_summary` (`str`): Path to assembly summary file, necessary for the app to gather assembly information, this allows for the script to map between refseq accessions and chromosomes.
 - `-gff` (`str`): Path to GFF file containing all relevant transcripts for assay, available in 001_reference i.e. GCF_000001405.25_GRCh37.p13_genomic.gff.
 
 ### Useful ones
 
 #### Files
 - `-ref_igv`, `--reference_file_for_igv` (`file`): Path to the Reference genome fasta file for igv_reports, used in generating IGV reports.
-- `-dump`, `--hgnc_dump_path` (`file`): Path to HGNC TSV file with HGNC information. Required if gene symbols are present (`-gs` is specified).
-
-#### Booleans
-- `-gs`, `-symbols_present` (`bool`): Flag to indicate whether gene symbols are present in the annotation file.
 
 ## Misc
 - `-pickle` (`str`): Import GFF as a pickle file, this is for testing mostly to speed-up running, so gff isn't processed each time.
@@ -52,7 +48,7 @@ we use for our pipelines.
 ## Example Command
 
 ```bash
-python gene_annotation2bed.py -ig annotation.tsv -o output_suffix -ref hg38 -f 50 --assembly_summary assembly_summary.txt -ref_igv ref_genome.fasta -symbols_present --hgnc_dump_path hgnc_info.tsv -gff your_file.gff -pickle pickle_file.pkl
+python gene_annotation2bed.py -ig annotation.tsv -o output_suffix -ref hg38 -f 5 --assembly_summary assembly_summary.txt -ref_igv ref_genome.fasta --hgnc_dump_path hgnc_info.tsv -gff your_file.gff -pickle pickle_file.pkl
 ```
 
 ---
@@ -81,17 +77,3 @@ IGV report:
 The script produces a HTML report of all the bed file entries. Displayed in IGV with the refseq track
 and bed file aligned with the respecive annotation.
 
-<!--
-## Script Inputs - Defaults & Behaviour
-
-- `Genome` (required): The genome build for the resource
-- `Refseq gff` (`--gff_file`): The corresponding gff file for refseq transcripts for the genome build.
-- OR the processed dataframe for the refseq gff in pickle format (--pickle).
-- annotation or transcript file with the annotation information in TSV format.
-- The reference fasta for using for igv reports (i.e. `-fasta hs37d5.fa.gz`), the corresponding
-  index should be present in the same folder.
-- The output file suffix for the outputed .bed file.
-- Flanking (int): The required flanking either side of the transcripts selected.
-- Assembly summary - corresponding assembly report file for the refseq.gff, this is used
-  to determine the corresponding chromosome for each transcript.
- -->

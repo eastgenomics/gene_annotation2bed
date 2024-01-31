@@ -46,15 +46,18 @@ def parse_args() -> argparse.Namespace:
     group1.add_argument("-pkl", "--pickle", help="Import gff as pickle file")
 
     parser.add_argument(
-        "-ig", "--annotation_file", help="Path to the annotation file (TSV)",
+        "-ann", "--annotation_file",
+        help="Path to the annotation file (TSV)",
         required=True
     )
 
     parser.add_argument(
-        "-o", "--output_file_suffix", help="Output file suffix", required=True
+        "-o", "--output_file_suffix",
+        help="Output file suffix", required=True
     )
     parser.add_argument(
-        "-build", "--genome_build", help="Human reference genome (hg19/hg38)",
+        "-build", "--genome_build",
+        help="Human reference genome (hg19/hg38)",
         required=True, choices=('hg19', 'hg38')
     )
     parser.add_argument(
@@ -63,10 +66,16 @@ def parse_args() -> argparse.Namespace:
         help="Path to Reference genome fasta file for igv_reports",
     )
     parser.add_argument(
-        "-f", "--flanking", type=int, help="Flanking size", required=True
+        "-f", "--flanking",
+        type=int, help="Flanking size",
+        required=False,
+        default=0
     )
     parser.add_argument(
-        "--assembly_summary", help="Path to assembly summary file", required=True
+        "-as",
+        "--assembly_summary",
+        help="Path to assembly summary file",
+        required=True
     )
 
     # parser.add_argument('--report_name', help="Name for report")
