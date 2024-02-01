@@ -36,7 +36,7 @@ class TestParseGFF(unittest.TestCase):
         Set up the test data. Load the preprocessed gff file.
         If not present then exit.
         """
-        self.gff_path = f"{TEST_DATA_DIR}/test_GRCh37_genomic.gff"  # GCF_000001405.25_GRCh37.p13_genomic.gff
+        self.gff_path = f"{TEST_DATA_DIR}/test_GRCh37_genomic.gff"
         self.test_df = bed.parse_gff(self.gff_path)
 
     def test_parse_gff_type(self):
@@ -560,7 +560,9 @@ class TestMergeOverlapping(unittest.TestCase):
         Test merge_overlapping function with an empty dataframe.
         """
         empty_df = pd.DataFrame(columns=[
-                                "seq_id", "start_flank", "end_flank", "hgnc_id", "annotation", "gene", "chromosome"])
+                                "seq_id", "start_flank", "end_flank",
+                                "hgnc_id", "annotation", "gene",
+                                "chromosome"])
         with self.assertRaises(RuntimeError):
             merged_df = bed.merge_overlapping(empty_df)
 
