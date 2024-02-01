@@ -43,7 +43,7 @@ class TestParseGFF(unittest.TestCase):
         Set up the test data. Load the preprocessed gff file.
         If not present then exit.
         """
-        self.gff_path = f"{TEST_DATA_DIR}/test_GRCh37_genomic.gff" # GCF_000001405.25_GRCh37.p13_genomic.gff
+        self.gff_path = f"{TEST_DATA_DIR}/test_GRCh37_genomic.gff"  # GCF_000001405.25_GRCh37.p13_genomic.gff
         self.test_df = parse_gff(self.gff_path)
 
     def test_parse_gff_type(self):
@@ -52,10 +52,10 @@ class TestParseGFF(unittest.TestCase):
 
     def test_parse_gff_columns(self):
         # Test if the returned DataFrame has the correct columns
-        expected_columns = ['seq_id', 'source','type', 'start',
-                           'end', 'score','strand', 'phase',
-                           'attributes','Dbxref', 'ID',
-                           'gbkey', 'gene','transcript_id','hgnc_id']
+        expected_columns = ['seq_id', 'source', 'type', 'start',
+                            'end', 'score', 'strand', 'phase',
+                            'attributes', 'Dbxref', 'ID',
+                            'gbkey', 'gene', 'transcript_id', 'hgnc_id']
         self.assertListEqual(list(self.test_df.columns), expected_columns)
 
     def test_parse_gff_startswith_NM(self):
@@ -449,8 +449,10 @@ class TestWriteBed(unittest.TestCase):
 
     def setUp(self) -> None:
         self.assembly_file = "data/GCF_000001405.25_GRCh37.p13_assembly_report.txt"
-        self.annotation_df = pd.read_csv(f"{TEST_DATA_DIR}/example_final_merged_df.csv")
-        self.coordinates_df = pd.read_csv(f"{TEST_DATA_DIR}/example_coordinates_df.csv")
+        self.annotation_df = pd.read_csv(
+            f"{TEST_DATA_DIR}/example_final_merged_df.csv")
+        self.coordinates_df = pd.read_csv(
+            f"{TEST_DATA_DIR}/example_coordinates_df.csv")
 
         return super().setUp()
 
