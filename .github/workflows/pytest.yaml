@@ -16,6 +16,9 @@ jobs:
         pip install pipenv codecov
         pip install -r requirements.txt
         pipenv install --dev
+    - name: gunzip data
+      run: |
+        gunzip tests/test_data/*.gz
     - name: Test with pytest
       run: |
         pytest -vv --cov . --cov scripts/ --cov utils/
