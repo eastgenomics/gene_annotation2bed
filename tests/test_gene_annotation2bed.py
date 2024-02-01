@@ -25,8 +25,6 @@ TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
 )
 
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
-
 class TestParseGFF(unittest.TestCase):
     """
     Tests for parsing the gff file.
@@ -294,7 +292,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
     def capsys(self, capsys):
         self.capsys = capsys
 
-    def test_parsing_prints2(self):
+    def test_parsing_prints(self):
         """
         Test parsing of transcripts from the annotation file.
         - Checks prints for correct output.
