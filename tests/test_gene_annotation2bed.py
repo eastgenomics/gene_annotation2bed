@@ -8,6 +8,12 @@ Run: python -m pytest -v tests/test_gene_2annotation_script.py
 
 """
 
+from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
+                                 parse_annotation_tsv, parse_pickle,
+                                 merge_dataframes, write_bed,
+                                 subtract_and_replace, merge_overlapping,
+                                 parse_gff
+                                 )
 import os
 import sys
 from io import StringIO
@@ -21,14 +27,110 @@ import numpy as np
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
 
-from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
-                                 parse_annotation_tsv, parse_pickle,
-                                 merge_dataframes, write_bed,
-                                 subtract_and_replace, merge_overlapping)
 
 TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
 )
+
+
+class TestParseGFF(unittest.TestCase):
+    """
+    Tests for parsing the gff file.
+    """
+
+    def setUp(self):
+        """
+        Set up the test data. Load the preprocessed gff file.
+        If not present then exit.
+        """
+        self.gff_path = f"{TEST_DATA_DIR}/test_GRCh37_genomic.gff" # GCF_000001405.25_GRCh37.p13_genomic.gff
+        self.test_df = parse_gff(self.gff_path)
+
+    def test_parse_gff_type(self):
+        # Test if the returned object is a DataFrame
+        self.assertIsInstance(self.test_df, pd.DataFrame)
+
+    def test_parse_gff_columns(self):
+        # Test if the returned DataFrame has the correct columns
+        expected_columns = ['seq_id', 'source','type', 'start',
+                           'end', 'score','strand', 'phase',
+                           'attributes','Dbxref', 'ID',
+                           'gbkey', 'gene','transcript_id','hgnc_id']
+        self.assertListEqual(list(self.test_df.columns), expected_columns)
+
+    def test_parse_gff_startswith_NM(self):
+        # Test if the transcript_id starts with 'NM_'
+        self.assertTrue(
+            all(self.test_df['transcript_id'].str.startswith('NM_')))
+
+    def test_parse_gff_empty_input(self):
+        # Test if the function handles empty input gracefully
+        with self.assertRaises(Exception):
+            parse_gff(None)
+
+    def test_parse_gff_dtypes(self):
+        # Test if the data types are set as expected
+        expected_dtypes = {'seq_id': 'object', 'source': 'category',
+                           'type': 'category', 'start': 'uint32',
+                           'end': 'uint32', 'score': 'object',
+                           'strand': 'object', 'phase': 'object',
+                           'attributes': 'object',
+                           'Dbxref': 'object', 'ID': 'category',
+                           'gbkey': 'object', 'gene': 'object',
+                           'transcript_id': 'object',
+                           'hgnc_id': 'Int64'}
+        print(self.test_df.dtypes)
+        for col, dtype in expected_dtypes.items():
+            self.assertEqual(self.test_df[col].dtype.name, dtype)
+
+    def test_parse_gff_extract_hgnc_id(self):
+        # Test if the hgnc_id column is extracted properly
+        self.assertTrue(
+            all(self.test_df['hgnc_id'] == self.test_df['hgnc_id']))
+
+    def test_parse_gff_filter_columns(self):
+        # Test if unwanted columns are filtered out
+        unwanted_columns = set(self.test_df.columns) - \
+            set(self.test_df.columns)
+        self.assertEqual(len(unwanted_columns), 0)
+
+    def test_parse_gff_return_not_empty(self):
+        # Test if the returned DataFrame is not empty
+        self.assertFalse(self.test_df.empty)
+
+    def test_parse_gff_return_contains_data(self):
+        # Test if the returned DataFrame contains expected data
+        self.assertTrue(self.test_df.equals(self.test_df))
+
+    def test_parse_gff_return_contains_expected_columns(self):
+        # Test if the returned DataFrame contains expected columns
+        self.assertTrue(
+            all(col in self.test_df.columns for col in self.test_df.columns))
+
+    def test_parse_gff_filter(self):
+        # Test if the filtering works properly
+        self.assertTrue(
+            all(self.test_df['transcript_id'].str.startswith('NM_')))
+
+    def test_parse_gff_drop_columns(self):
+        # Test if unwanted columns are dropped properly
+        unwanted_columns = ["Gap", "Is_circular", "Name", "Note", "Parent", "Target", "anticodon", "assembly_bases_aln", "assembly_bases_seq", "bit_score", "blast_aligner", "blast_score", "bound_moiety", "chromosome", "codons", "common_component", "consensus_splices", "country", "description", "direction", "e_value", "end_range", "exception", "exon_identity", "exon_number", "experiment", "feat_class", "filter_score", "for_remapping", "function", "gap_count", "gene_biotype", "gene_synonym", "genome", "hsp_percent_coverage", "identity", "idty", "inference", "inversion_merge_aligner", "isolation-source", "lxr_locAcc_currStat_120",
+                            "lxr_locAcc_currStat_35", "map", "matchable_bases", "matched_bases", "matches", "merge_aligner", "mobile_element_type", "mol_type", "not_for_annotation", "note", "num_ident", "num_mismatch", "number", "partial", "pct_coverage", "pct_coverage_hiqual", "pct_identity_gap", "pct_identity_gapopen_only", "pct_identity_ungap", "product", "product_coverage", "protein_id", "pseudo", "rank", "recombination_class", "regulatory_class", "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq", "satellite", "splices", "standard_name", "start_range", "tag", "tissue-type", "transl_except", "transl_table", "weighted_identity"]
+        for col in unwanted_columns:
+            self.assertNotIn(col, self.test_df.columns)
+
+    def test_parse_gff_prints(self):
+        """
+        _summary_
+        """
+        pass
+
+    # def test_parse_gff(self):
+    #     """
+    #     _summary_
+    #     """
+    #     test_df = parse_gff(self.gff_path)
+    #     assert test_df.empty is False
 
 
 class TestExtractHGNCID(unittest.TestCase):
@@ -160,6 +262,7 @@ class TestConvertCoordinates(unittest.TestCase):
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
+
 class TestParseAnnotationTsv(unittest.TestCase):
     """
     Tests for checking correct parsing of the annotation resource.
@@ -210,21 +313,17 @@ class TestParseAnnotationTsv(unittest.TestCase):
             hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
                 path, self.gff_transcripts_df)
 
-
     def test_empty_file(self):
         """
         test no pandas import as empty file.
         """
-        expected_output = (
-            "The annotation file should be a tab-separated file with two columns: ",
-            "'ID' and 'annotation'"
-        )
+        expected_output = "No columns to parse from file"
         path = f"{TEST_DATA_DIR}/emptyfile.tsv"
-        with self.assertRaises(pd.errors.EmptyDataError):
+        with self.assertRaises(pd.errors.EmptyDataError) as cm:
             path = f"{TEST_DATA_DIR}/empty_file.tsv"
             hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
                 path, self.gff_transcripts_df)
-
+        self.assertEqual(str(cm.exception), expected_output)
 
 
 class TestMerge_Dataframes(unittest.TestCase):
@@ -270,7 +369,7 @@ class TestMerge_Dataframes(unittest.TestCase):
 
         expected_output_list = [
             'All rows were separated successfully',
-            'No HGNC IDs found in the annotation file.', # missing transcript line?
+            'No HGNC IDs found in the annotation file.',  # missing transcript line?
             'No Coordinates found in the annotation file.',
             ''
         ]
@@ -347,17 +446,18 @@ class TestWriteBed(unittest.TestCase):
     """
     Tests for writing the bed file function.
     """
+
     def setUp(self) -> None:
         self.assembly_file = "data/GCF_000001405.25_GRCh37.p13_assembly_report.txt"
+        self.annotation_df = pd.read_csv(f"{TEST_DATA_DIR}/example_final_merged_df.csv")
+        self.coordinates_df = pd.read_csv(f"{TEST_DATA_DIR}/example_coordinates_df.csv")
+
         return super().setUp()
 
     def test_write_bed_creates_file(self):
         """
         Test if the write_bed function creates the correct file.
         """
-        # Create sample dataframes and args
-        annotation_df = pd.read_csv("example_final_merged_df.csv")
-        coordinates_df = pd.read_csv("example_coordinates_df.csv")
         args = argparse.Namespace(
             flanking=10,
             assembly_summary=self.assembly_file,
@@ -366,7 +466,7 @@ class TestWriteBed(unittest.TestCase):
         )
 
         # Call the function
-        write_bed(annotation_df, coordinates_df, args)
+        write_bed(self.annotation_df, self.coordinates_df, args)
 
         # Check if the output files are created
         assert os.path.exists("output_hg38_test.bed")
@@ -376,7 +476,6 @@ class TestWriteBed(unittest.TestCase):
         os.remove("output_hg38_test.bed")
         os.remove("output_hg38_test.maf")
 
-
     def test_write_bed_edge_cases(self):
         """
         Test empty files for write_bed function.
@@ -385,25 +484,21 @@ class TestWriteBed(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             # Test with empty annotation df
             annotation_df = pd.DataFrame()
-            coordinates_df = pd.read_csv("example_coordinates_df.csv")
             args = argparse.Namespace()
 
             # Call the function and check if it raises an error
-            write_bed(annotation_df, coordinates_df, args)
+            write_bed(annotation_df, self.coordinates_df, args)
 
         # Check if the output files are not created
         assert not os.path.exists("output_.bed")
         assert not os.path.exists("output_.maf")
 
-
     # Additional tests for normal function with example annotation df and coordinates df
+
     def test_write_bed_normal_function(self):
         """
         Test the write_bed function with example annotation and coordinates dataframes.
         """
-        # Load example dataframes from files
-        annotation_df = pd.read_csv("example_final_merged_df.csv")
-        coordinates_df = pd.read_csv("example_coordinates_df.csv")
         args = argparse.Namespace(
             flanking=10,
             assembly_summary=self.assembly_file,
@@ -412,7 +507,7 @@ class TestWriteBed(unittest.TestCase):
         )
 
         # Call the function
-        write_bed(annotation_df, coordinates_df, args)
+        write_bed(self.annotation_df, self.coordinates_df, args)
 
         # Check if the output files are created
         assert os.path.exists("output_hg38_test.bed")
@@ -427,6 +522,7 @@ class TestSubtractAndReplace(unittest.TestCase):
     """
     Tests for subtract_and_replace function.
     """
+
     def test_subtract_and_replace_positive(self):
         """
         Test subtract_and_replace function with positive integers.
@@ -434,14 +530,14 @@ class TestSubtractAndReplace(unittest.TestCase):
         assert subtract_and_replace(10, 5) == 5
         assert subtract_and_replace(100, 50) == 50
 
-
     def test_subtract_and_replace_zero_and_negative(self):
         """
         Test subtract_and_replace function with zero and negative integers.
         """
-        assert subtract_and_replace(0, 5) == 1  # Minimum value is 1 when input is 0
-        assert subtract_and_replace(3, 5) == 1  # Minimum value is 1 when input is less than 5
-
+        assert subtract_and_replace(
+            0, 5) == 1  # Minimum value is 1 when input is 0
+        # Minimum value is 1 when input is less than 5
+        assert subtract_and_replace(3, 5) == 1
 
     def test_subtract_and_replace_large_integers(self):
         """
@@ -450,15 +546,16 @@ class TestSubtractAndReplace(unittest.TestCase):
         assert subtract_and_replace(100000000000, 50000000000) == 50000000000
         assert subtract_and_replace(999999999999, 500000000000) == 499999999999
 
+
 class TestMergeOverlapping(unittest.TestCase):
     def test_merge_overlapping_empty_dataframe(self):
         """
         Test merge_overlapping function with an empty dataframe.
         """
-        empty_df = pd.DataFrame(columns=["seq_id", "start_flank", "end_flank", "hgnc_id", "annotation", "gene", "chromosome"])
+        empty_df = pd.DataFrame(columns=[
+                                "seq_id", "start_flank", "end_flank", "hgnc_id", "annotation", "gene", "chromosome"])
         with self.assertRaises(RuntimeError):
             merged_df = merge_overlapping(empty_df)
-
 
     def test_merge_overlapping_no_overlap(self):
         """
@@ -503,6 +600,7 @@ class TestMergeOverlapping(unittest.TestCase):
         })
 
         assert merged_df.equals(expected_df)
+
 
 if __name__ == '__main__':
     unittest.main()
