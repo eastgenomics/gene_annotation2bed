@@ -283,25 +283,24 @@ class TestParseAnnotationTsv(unittest.TestCase):
             print("File not found! Ensure the preprocessed gff file is present.")
             sys.exit(1)
 
-    def test_parsing_prints(self):
+    @pytest.fixture(autouse=True)
+    def capsys(self, capsys):
+        self.capsys = capsys
+
+    def test_parsing_prints2(self):
         """
         Test parsing of transcripts from the annotation file.
         - Checks prints for correct output.
         """
-        # Set-up to capture stdout
-        capturedOutput = StringIO()
-        sys.stdout = capturedOutput
-
         path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
         hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
             path, self.gff_transcripts_df)
 
-        # Check print output for coorect that all rows were separated.
-        sys.stdout = sys.__stdout__
-        print_output = capturedOutput.getvalue().split("\n")
+        captured = self.capsys.readouterr()
+        print_output = captured.out.split("\n")
         expected_output = "All rows were separated successfully"
 
-        self.assertEqual(print_output[0], expected_output)
+        assert print_output[0] == expected_output
 
     def test_empty_annotation_file(self):
         """
@@ -347,14 +346,18 @@ class TestMerge_Dataframes(unittest.TestCase):
             print("File not found! Ensure the preprocessed gff file is present.")
             sys.exit(1)
 
+    @pytest.fixture(autouse=True)
+    def capsys(self, capsys):
+        self.capsys = capsys
+
     def test_parsing_transcripts_prints(self):
         """
         Test parsing of transcripts from the annotation file.
             - Checks prints for correct output.
         """
         # Set-up to capture stdout
-        capturedOutput = StringIO()
-        sys.stdout = capturedOutput
+        captured = self.capsys.readouterr()
+        print_output = captured.out.split("\n")
 
         path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
         hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
@@ -363,9 +366,6 @@ class TestMerge_Dataframes(unittest.TestCase):
         annotation_df, coordinates_df = merge_dataframes(
             hgnc_df, transcript_df, coordinates_df, self.gff_transcripts_df
         )
-        # Check print output for coorect that all rows were separated.
-        sys.stdout = sys.__stdout__
-        print_output = capturedOutput.getvalue().split("\n")
 
         expected_output_list = [
             'All rows were separated successfully',
