@@ -6,10 +6,10 @@ Example cmd (TODO: add example cmd once script is finalized):
 
 Current working cmd:
 /home/rswilson1/anaconda3/envs/Annotation_app/bin/python \
-/home/rswilson1/Documents/Programming_project/gene_annotation2bed/bin/gene_annotation2bed.py \
+gene_annotation2bed.py \
 -pkl ./tests/test_data/refseq_gff_preprocessed.pkl \
 -ig data/mixed_dataset.tsv \
--ref_igv ./tests/test_data/hs37d5.fa -ref hg38 -f 5 \
+-ref_igv ./tests/test_data/hs37d5.fa -build hg19 -f 5 \
 --assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
 -o "test_X"
 """
