@@ -8,21 +8,14 @@ Run: python -m pytest -v tests/test_gene_2annotation_script.py
 
 """
 
-from gene_annotation2bed import (convert_coordinates, extract_hgnc_id,
-                                 parse_annotation_tsv, parse_pickle,
-                                 merge_dataframes, write_bed,
-                                 subtract_and_replace, merge_overlapping,
-                                 parse_gff
-                                 )
+import gene_annotation2bed as bed
 import os
 import sys
-from io import StringIO
 
 import argparse
 import unittest
 import pandas as pd
 import pytest
-import numpy as np
 
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
@@ -44,7 +37,7 @@ class TestParseGFF(unittest.TestCase):
         If not present then exit.
         """
         self.gff_path = f"{TEST_DATA_DIR}/test_GRCh37_genomic.gff"  # GCF_000001405.25_GRCh37.p13_genomic.gff
-        self.test_df = parse_gff(self.gff_path)
+        self.test_df = bed.parse_gff(self.gff_path)
 
     def test_parse_gff_type(self):
         # Test if the returned object is a DataFrame
@@ -66,7 +59,7 @@ class TestParseGFF(unittest.TestCase):
     def test_parse_gff_empty_input(self):
         # Test if the function handles empty input gracefully
         with self.assertRaises(Exception):
-            parse_gff(None)
+            bed.parse_gff(None)
 
     def test_parse_gff_dtypes(self):
         # Test if the data types are set as expected
@@ -79,7 +72,7 @@ class TestParseGFF(unittest.TestCase):
                            'gbkey': 'object', 'gene': 'object',
                            'transcript_id': 'object',
                            'hgnc_id': 'Int64'}
-        print(self.test_df.dtypes)
+
         for col, dtype in expected_dtypes.items():
             self.assertEqual(self.test_df[col].dtype.name, dtype)
 
@@ -129,7 +122,7 @@ class TestParseGFF(unittest.TestCase):
     #     """
     #     _summary_
     #     """
-    #     test_df = parse_gff(self.gff_path)
+    #     test_df = bed.parse_gff(self.gff_path)
     #     assert test_df.empty is False
 
 
@@ -140,7 +133,7 @@ class TestExtractHGNCID(unittest.TestCase):
         Using the extract_hgnc_id function.
         """
         attributes_str = "Dbxref=GeneID:123,HGNC:456"
-        result = extract_hgnc_id(attributes_str)
+        result = bed.extract_hgnc_id(attributes_str)
         self.assertEqual(result, 456)
 
     def test_extract_hgnc_id_not_found(self):
@@ -148,7 +141,7 @@ class TestExtractHGNCID(unittest.TestCase):
         Testing the extraction of HGNC ID when no HGNC ID is found.
         """
         attributes_str = "Dbxref=GeneID:123"
-        result = extract_hgnc_id(attributes_str)
+        result = bed.extract_hgnc_id(attributes_str)
         self.assertIsNone(result)
 
     def test_extract_hgnc_id_multiple_entries(self):
@@ -159,7 +152,7 @@ class TestExtractHGNCID(unittest.TestCase):
         Should raise an error but take first HGNC_id.
         """
         attributes_str = "Dbxref=GeneID:123,HGNC:456,HGNC:789"
-        result = extract_hgnc_id(attributes_str)
+        result = bed.extract_hgnc_id(attributes_str)
         self.assertEqual(result, 456)
 
 
@@ -175,7 +168,7 @@ class TestConvertCoordinates(unittest.TestCase):
             "annotation": ["promoter_of_interest", "enhancer"]
         }
         input_df = pd.DataFrame(input_data)
-        result_df = convert_coordinates(input_df)
+        result_df = bed.convert_coordinates(input_df)
         expected_data = {
             "chromosome": ["1", "2"],
             "start": [11874, 20000],
@@ -192,7 +185,7 @@ class TestConvertCoordinates(unittest.TestCase):
         Test when the input DataFrame is empty
         """
         input_df = pd.DataFrame()
-        result_df = convert_coordinates(input_df)
+        result_df = bed.convert_coordinates(input_df)
         self.assertTrue(result_df.empty)
 
     def test_convert_coordinates_extra_columns(self):
@@ -205,7 +198,7 @@ class TestConvertCoordinates(unittest.TestCase):
             "extra_column": ["extra1", "extra2"]
         }
         input_df = pd.DataFrame(input_data)
-        result_df = convert_coordinates(input_df)
+        result_df = bed.convert_coordinates(input_df)
         expected_data = {
             "chromosome": ["1", "2"],
             "start": [11874, 20000],
@@ -227,7 +220,7 @@ class TestConvertCoordinates(unittest.TestCase):
             "annotation": ["promoter_of_interest", "enhancer"]
         }
         input_df = pd.DataFrame(input_data)
-        result_df = convert_coordinates(input_df)
+        result_df = bed.convert_coordinates(input_df)
         expected_data = {
             "chromosome": ["1", "2"],
             "start": [11874, 20000],
@@ -249,7 +242,7 @@ class TestConvertCoordinates(unittest.TestCase):
             "annotation": ["large_region"]
         }
         input_df = pd.DataFrame(input_data)
-        result_df = convert_coordinates(input_df)
+        result_df = bed.convert_coordinates(input_df)
         expected_data = {
             "chromosome": ["1"],
             "start": [999999999],
@@ -276,7 +269,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         # run script to produce gff if not present?
         """
         try:
-            self.gff_transcripts_df = parse_pickle(
+            self.gff_transcripts_df = bed.parse_pickle(
                 f"{TEST_DATA_DIR}/refseq_gff_preprocessed.pkl"
             )
         except FileNotFoundError:
@@ -293,7 +286,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         - Checks prints for correct output.
         """
         path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
-        hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+        hgnc_df, transcript_df, coordinates_df = bed.parse_annotation_tsv(
             path, self.gff_transcripts_df)
 
         captured = self.capsys.readouterr()
@@ -309,7 +302,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         """
         with self.assertRaises(RuntimeError):
             path = f"{TEST_DATA_DIR}/empty.tsv"
-            hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+            hgnc_df, transcript_df, coordinates_df = bed.parse_annotation_tsv(
                 path, self.gff_transcripts_df)
 
     def test_empty_file(self):
@@ -320,7 +313,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         path = f"{TEST_DATA_DIR}/emptyfile.tsv"
         with self.assertRaises(pd.errors.EmptyDataError) as cm:
             path = f"{TEST_DATA_DIR}/empty_file.tsv"
-            hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+            hgnc_df, transcript_df, coordinates_df = bed.parse_annotation_tsv(
                 path, self.gff_transcripts_df)
         self.assertEqual(str(cm.exception), expected_output)
 
@@ -339,7 +332,7 @@ class TestMerge_Dataframes(unittest.TestCase):
         # run script to produce pkl file for gff if not present.
         """
         try:
-            self.gff_transcripts_df = parse_pickle(
+            self.gff_transcripts_df = bed.parse_pickle(
                 f"{TEST_DATA_DIR}/refseq_gff_preprocessed.pkl"
             )
         except FileNotFoundError:
@@ -355,23 +348,20 @@ class TestMerge_Dataframes(unittest.TestCase):
         Test parsing of transcripts from the annotation file.
             - Checks prints for correct output.
         """
-        # Set-up to capture stdout
-        captured = self.capsys.readouterr()
-        print_output = captured.out.split("\n")
 
         path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
-        hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+        hgnc_df, transcript_df, coordinates_df = bed.parse_annotation_tsv(
             path, self.gff_transcripts_df)
         # Merge the dataframes
-        annotation_df, coordinates_df = merge_dataframes(
+        annotation_df, coordinates_df = bed.merge_dataframes(
             hgnc_df, transcript_df, coordinates_df, self.gff_transcripts_df
         )
-
+        captured = self.capsys.readouterr()
+        print_output = captured.out.split("\n")
         expected_output_list = [
             'All rows were separated successfully',
             'No HGNC IDs found in the annotation file.',  # missing transcript line?
-            'No Coordinates found in the annotation file.',
-            ''
+            'No Coordinates found in the annotation file.'
         ]
 
         for i, (actual_output, expected_output) in enumerate(zip(print_output, expected_output_list), 1):
@@ -384,10 +374,10 @@ class TestMerge_Dataframes(unittest.TestCase):
             - Checks right output df is created with correct numbers of columns.
         """
         path = f"{TEST_DATA_DIR}/transcripts_anno_test.tsv"
-        hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+        hgnc_df, transcript_df, coordinates_df = bed.parse_annotation_tsv(
             path, self.gff_transcripts_df)
         # Merge the dataframes
-        annotation_df, coordinates_df = merge_dataframes(
+        annotation_df, coordinates_df = bed.merge_dataframes(
             hgnc_df, transcript_df, coordinates_df, self.gff_transcripts_df
         )
         # Check df output
@@ -412,10 +402,10 @@ class TestMerge_Dataframes(unittest.TestCase):
         Test parsing of raw coordinates from the annotation file.
         """
         path = f"{TEST_DATA_DIR}/coordinates_anno_test.tsv"
-        hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+        hgnc_df, transcript_df, coordinates_df = bed.parse_annotation_tsv(
             path, self.gff_transcripts_df)
         # Merge the dataframes
-        annotation_df, coordinates_df = merge_dataframes(
+        annotation_df, coordinates_df = bed.merge_dataframes(
             hgnc_df, transcript_df, coordinates_df, self.gff_transcripts_df
         )
 
@@ -468,7 +458,7 @@ class TestWriteBed(unittest.TestCase):
         )
 
         # Call the function
-        write_bed(self.annotation_df, self.coordinates_df, args)
+        bed.write_bed(self.annotation_df, self.coordinates_df, args)
 
         # Check if the output files are created
         assert os.path.exists("output_hg38_test.bed")
@@ -489,7 +479,7 @@ class TestWriteBed(unittest.TestCase):
             args = argparse.Namespace()
 
             # Call the function and check if it raises an error
-            write_bed(annotation_df, self.coordinates_df, args)
+            bed.write_bed(annotation_df, self.coordinates_df, args)
 
         # Check if the output files are not created
         assert not os.path.exists("output_.bed")
@@ -509,7 +499,7 @@ class TestWriteBed(unittest.TestCase):
         )
 
         # Call the function
-        write_bed(self.annotation_df, self.coordinates_df, args)
+        bed.write_bed(self.annotation_df, self.coordinates_df, args)
 
         # Check if the output files are created
         assert os.path.exists("output_hg38_test.bed")
@@ -529,24 +519,24 @@ class TestSubtractAndReplace(unittest.TestCase):
         """
         Test subtract_and_replace function with positive integers.
         """
-        assert subtract_and_replace(10, 5) == 5
-        assert subtract_and_replace(100, 50) == 50
+        assert bed.subtract_and_replace(10, 5) == 5
+        assert bed.subtract_and_replace(100, 50) == 50
 
     def test_subtract_and_replace_zero_and_negative(self):
         """
         Test subtract_and_replace function with zero and negative integers.
         """
-        assert subtract_and_replace(
+        assert bed.subtract_and_replace(
             0, 5) == 1  # Minimum value is 1 when input is 0
         # Minimum value is 1 when input is less than 5
-        assert subtract_and_replace(3, 5) == 1
+        assert bed.subtract_and_replace(3, 5) == 1
 
     def test_subtract_and_replace_large_integers(self):
         """
         Test subtract_and_replace function with very large integers.
         """
-        assert subtract_and_replace(100000000000, 50000000000) == 50000000000
-        assert subtract_and_replace(999999999999, 500000000000) == 499999999999
+        assert bed.subtract_and_replace(100000000000, 50000000000) == 50000000000
+        assert bed.subtract_and_replace(999999999999, 500000000000) == 499999999999
 
 
 class TestMergeOverlapping(unittest.TestCase):
@@ -557,7 +547,7 @@ class TestMergeOverlapping(unittest.TestCase):
         empty_df = pd.DataFrame(columns=[
                                 "seq_id", "start_flank", "end_flank", "hgnc_id", "annotation", "gene", "chromosome"])
         with self.assertRaises(RuntimeError):
-            merged_df = merge_overlapping(empty_df)
+            merged_df = bed.merge_overlapping(empty_df)
 
     def test_merge_overlapping_no_overlap(self):
         """
@@ -572,7 +562,7 @@ class TestMergeOverlapping(unittest.TestCase):
             "gene": ["gene1", "gene2", "gene3"],
             "chromosome": ["chr1", "chr2", "chr3"]
         })
-        merged_df = merge_overlapping(bed_df)
+        merged_df = bed.merge_overlapping(bed_df)
         assert merged_df.equals(bed_df)
 
     def test_merge_overlapping_with_overlap(self):
@@ -588,7 +578,7 @@ class TestMergeOverlapping(unittest.TestCase):
             "gene": ["gene1", "gene1", "gene1", "gene2", "gene2"],
             "chromosome": ["chr1", "chr1", "chr1", "chr2", "chr2"]
         })
-        merged_df = merge_overlapping(bed_df)
+        merged_df = bed.merge_overlapping(bed_df)
 
         # Define the expected merged dataframe
         expected_df = pd.DataFrame({
