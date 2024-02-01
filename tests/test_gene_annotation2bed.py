@@ -25,6 +25,7 @@ TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
 )
 
+IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 class TestParseGFF(unittest.TestCase):
     """
@@ -451,7 +452,7 @@ class TestWriteBed(unittest.TestCase):
     """
 
     def setUp(self) -> None:
-        self.assembly_file = "data/GCF_000001405.25_GRCh37.p13_assembly_report.txt"
+        self.assembly_file = "tests/test_data/GCF_000001405.25_GRCh37.p13_assembly_report.txt"
         self.annotation_df = pd.read_csv(
             f"{TEST_DATA_DIR}/example_final_merged_df.csv")
         self.coordinates_df = pd.read_csv(
