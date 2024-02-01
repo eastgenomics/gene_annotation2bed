@@ -107,24 +107,37 @@ class TestParseGFF(unittest.TestCase):
 
     def test_parse_gff_drop_columns(self):
         # Test if unwanted columns are dropped properly
-        unwanted_columns = ["Gap", "Is_circular", "Name", "Note", "Parent", "Target", "anticodon", "assembly_bases_aln", "assembly_bases_seq", "bit_score", "blast_aligner", "blast_score", "bound_moiety", "chromosome", "codons", "common_component", "consensus_splices", "country", "description", "direction", "e_value", "end_range", "exception", "exon_identity", "exon_number", "experiment", "feat_class", "filter_score", "for_remapping", "function", "gap_count", "gene_biotype", "gene_synonym", "genome", "hsp_percent_coverage", "identity", "idty", "inference", "inversion_merge_aligner", "isolation-source", "lxr_locAcc_currStat_120",
-                            "lxr_locAcc_currStat_35", "map", "matchable_bases", "matched_bases", "matches", "merge_aligner", "mobile_element_type", "mol_type", "not_for_annotation", "note", "num_ident", "num_mismatch", "number", "partial", "pct_coverage", "pct_coverage_hiqual", "pct_identity_gap", "pct_identity_gapopen_only", "pct_identity_ungap", "product", "product_coverage", "protein_id", "pseudo", "rank", "recombination_class", "regulatory_class", "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq", "satellite", "splices", "standard_name", "start_range", "tag", "tissue-type", "transl_except", "transl_table", "weighted_identity"]
+        unwanted_columns = ["Gap", "Is_circular", "Name", "Note",
+                            "Parent", "Target", "anticodon",
+                            "assembly_bases_aln", "assembly_bases_seq",
+                            "bit_score", "blast_aligner", "blast_score",
+                            "bound_moiety", "chromosome", "codons",
+                            "common_component", "consensus_splices",
+                            "country", "description", "direction",
+                            "e_value", "end_range", "exception",
+                            "exon_identity", "exon_number", "experiment",
+                            "feat_class", "filter_score", "for_remapping",
+                            "function", "gap_count", "gene_biotype",
+                            "gene_synonym", "genome", "hsp_percent_coverage",
+                            "identity", "idty", "inference",
+                            "inversion_merge_aligner", "isolation-source",
+                            "lxr_locAcc_currStat_120", "lxr_locAcc_currStat_35",
+                            "map", "matchable_bases", "matched_bases", "matches",
+                            "merge_aligner", "mobile_element_type",
+                            "mol_type", "not_for_annotation", "note",
+                            "num_ident", "num_mismatch", "number",
+                            "partial", "pct_coverage",
+                            "pct_coverage_hiqual", "pct_identity_gap",
+                            "pct_identity_gapopen_only", "pct_identity_ungap",
+                            "product", "product_coverage", "protein_id",
+                            "pseudo", "rank", "recombination_class",
+                            "regulatory_class", "rpt_family", "rpt_type",
+                            "rpt_unit_range", "rpt_unit_seq", "satellite",
+                            "splices", "standard_name", "start_range", "tag",
+                            "tissue-type", "transl_except", "transl_table",
+                            "weighted_identity"]
         for col in unwanted_columns:
             self.assertNotIn(col, self.test_df.columns)
-
-    def test_parse_gff_prints(self):
-        """
-        _summary_
-        """
-        pass
-
-    # def test_parse_gff(self):
-    #     """
-    #     _summary_
-    #     """
-    #     test_df = bed.parse_gff(self.gff_path)
-    #     assert test_df.empty is False
-
 
 class TestExtractHGNCID(unittest.TestCase):
     def test_extract_hgnc_id_found(self):
@@ -535,8 +548,10 @@ class TestSubtractAndReplace(unittest.TestCase):
         """
         Test subtract_and_replace function with very large integers.
         """
-        assert bed.subtract_and_replace(100000000000, 50000000000) == 50000000000
-        assert bed.subtract_and_replace(999999999999, 500000000000) == 499999999999
+        assert bed.subtract_and_replace(
+            100000000000, 50000000000) == 50000000000
+        assert bed.subtract_and_replace(
+            999999999999, 500000000000) == 499999999999
 
 
 class TestMergeOverlapping(unittest.TestCase):
