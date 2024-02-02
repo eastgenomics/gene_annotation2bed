@@ -16,6 +16,9 @@ jobs:
         pip install pipenv codecov
         pip install -r requirements.txt
         pipenv install --dev
+    - name: pull reference data
+      run: |
+        curl ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz -o tests/test_data/hs37d5.fa.gz
     - name: gunzip data
       run: |
         gunzip tests/test_data/*.gz

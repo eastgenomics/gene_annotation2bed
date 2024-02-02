@@ -186,7 +186,7 @@ class TestConstructVCF(unittest.TestCase):
         with pytest.raises(ValueError, match=expected_error):
             result_df = vcf_obj.fetch_nucleotides(row, self.reference_path)
 
-    @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Test doesn't work in Github Actions.")
+    # @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Test doesn't work in Github Actions.")
     def test_convert_bed_to_vcf(self):
         """
         Tests if the convert_bed_to_vcf method returns the expected output
