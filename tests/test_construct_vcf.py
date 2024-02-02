@@ -7,8 +7,6 @@ from scripts.construct_vcf import ConstructVCF, parse_args
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
-
 class TestConstructVCF(unittest.TestCase):
     def setUp(self):
         """
@@ -186,7 +184,6 @@ class TestConstructVCF(unittest.TestCase):
         with pytest.raises(ValueError, match=expected_error):
             result_df = vcf_obj.fetch_nucleotides(row, self.reference_path)
 
-    # @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Test doesn't work in Github Actions.")
     def test_convert_bed_to_vcf(self):
         """
         Tests if the convert_bed_to_vcf method returns the expected output
