@@ -2,32 +2,27 @@
 This script takes a GFF3 file and an annotation file,
 producing a BED file for annotation of relevant transcripts.
 Example cmd (TODO: add example cmd once script is finalized):
-/home/rswilson1/anaconda3/envs/Annotation_app/bin/python
-/home/rswilson1/Documents/Programming_project/gene_annotation2bed.py
--gff "GCF_000001405.25_GRCh37.p13_genomic.gff"
--ig cancerGeneList_test.maf -ref "hg19" -f 5
---assembly_summary "GCF_000001405.25_GRCh37.p13_assembly_report.txt"
--o "test6"
+
 
 Current working cmd:
-/home/rswilson1/anaconda3/envs/Annotation_app/bin/python
-/home/rswilson1/Documents/Programming_project/gene_annotation2bed/gene_annotation2bed.py
--pkl ./tests/test_data/refseq_gff_preprocessed.pkl
--ig data/mixed_dataset.tsv
--ref_igv ./tests/test_data/hs37d5.fa -ref hg38 -f 5
---assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt
+/home/rswilson1/anaconda3/envs/Annotation_app/bin/python \
+gene_annotation2bed.py \
+-pkl ./tests/test_data/refseq_gff_preprocessed.pkl \
+-ig data/mixed_dataset.tsv \
+-ref_igv ./tests/test_data/hs37d5.fa -build hg19 -f 5 \
+--assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
 -o "test_X"
 """
 
 import argparse
 
 import argcomplete
-import igv_report as igv
 import numpy as np
 import pandas as pd
 import re
 
-import gff2pandas as gffpd
+from utils import gff2pandas as gffpd
+from scripts import igv_report as igv
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -50,19 +45,19 @@ def parse_args() -> argparse.Namespace:
     group1.add_argument("-gff", "--gff_file", help="Path to GFF file")
     group1.add_argument("-pkl", "--pickle", help="Import gff as pickle file")
 
-    group2 = parser.add_mutually_exclusive_group(required=True)
-    group2.add_argument(
-        "-ig", "--annotation_file", help="Path to the annotation file (TSV)"
-    )
-    group2.add_argument(
-        "-it", "--transcript_file", help="Path to transcript annotation file"
+    parser.add_argument(
+        "-ann", "--annotation_file",
+        help="Path to the annotation file (TSV)",
+        required=True
     )
 
     parser.add_argument(
-        "-o", "--output_file_suffix", help="Output file suffix", required=True
+        "-o", "--output_file_suffix",
+        help="Output file suffix", required=True
     )
     parser.add_argument(
-        "-ref", "--reference_genome", help="Reference genome (hg19/hg38)",
+        "-build", "--genome_build",
+        help="Human reference genome (hg19/hg38)",
         required=True, choices=('hg19', 'hg38')
     )
     parser.add_argument(
@@ -71,11 +66,18 @@ def parse_args() -> argparse.Namespace:
         help="Path to Reference genome fasta file for igv_reports",
     )
     parser.add_argument(
-        "-f", "--flanking", type=int, help="Flanking size", required=True
+        "-f", "--flanking",
+        type=int, help="Flanking size",
+        required=False,
+        default=0
     )
     parser.add_argument(
-        "--assembly_summary", help="Path to assembly summary file", required=True
+        "-as",
+        "--assembly_summary",
+        help="Path to assembly summary file",
+        required=True
     )
+
     # parser.add_argument('--report_name', help="Name for report")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -88,7 +90,7 @@ def parse_gff(gff_file):
     Import GFF3 file and convert to pandas DataFrame.
 
     The GFF3 file is imported into a dataframe and then all the attributes
-    in the attributes column are split into seperate columns.
+    in the attributes column are split into separate columns.
     It then drops many of the additional fields from the attributes column
     which are not needed to reduce memory footprint.
     The dataframe is then filtered to only include entries which have the
@@ -160,30 +162,30 @@ def parse_gff(gff_file):
     """
     transcripts_gff = gffpd.read_gff3(gff_file)
     gff_df = transcripts_gff.attributes_to_columns()
+    columns_to_drop = [
+        "Gap", "Is_circular", "Name", "Note", "Parent", "Target", "anticodon",
+        "assembly_bases_aln", "assembly_bases_seq", "bit_score", "blast_aligner",
+        "blast_score", "bound_moiety", "chromosome", "codons", "common_component",
+        "consensus_splices", "country", "description", "direction", "e_value",
+        "end_range", "exception", "exon_identity", "exon_number", "experiment",
+        "feat_class", "filter_score", "for_remapping", "function", "gap_count",
+        "gene_biotype", "gene_synonym", "genome", "hsp_percent_coverage",
+        "identity", "idty", "inference", "inversion_merge_aligner",
+        "isolation-source", "lxr_locAcc_currStat_120", "lxr_locAcc_currStat_35",
+        "map", "matchable_bases", "matched_bases", "matches", "merge_aligner",
+        "mobile_element_type", "mol_type", "not_for_annotation", "note",
+        "num_ident", "num_mismatch", "number", "partial", "pct_coverage",
+        "pct_coverage_hiqual", "pct_identity_gap", "pct_identity_gapopen_only",
+        "pct_identity_ungap", "product", "product_coverage", "protein_id",
+        "pseudo", "rank", "recombination_class", "regulatory_class",
+        "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq",
+        "satellite", "splices", "standard_name", "start_range", "tag",
+        "tissue-type", "transl_except", "transl_table", "weighted_identity",
+    ]
+    # create a filter to drop columns
+    drop_filter = gff_df.filter(columns_to_drop)
     # drop columns that are not needed to reduce memory footprint
-    gff_df = gff_df.drop(
-        [
-            "Gap", "Is_circular", "Name", "Note", "Parent", "Target", "anticodon",
-            "assembly_bases_aln", "assembly_bases_seq", "bit_score", "blast_aligner",
-            "blast_score", "bound_moiety", "chromosome", "codons", "common_component",
-            "consensus_splices", "country", "description", "direction", "e_value",
-            "end_range", "exception", "exon_identity", "exon_number", "experiment",
-            "feat_class", "filter_score", "for_remapping", "function", "gap_count",
-            "gene_biotype", "gene_synonym", "genome", "hsp_percent_coverage",
-            "identity", "idty", "inference", "inversion_merge_aligner",
-            "isolation-source", "lxr_locAcc_currStat_120", "lxr_locAcc_currStat_35",
-            "map", "matchable_bases", "matched_bases", "matches", "merge_aligner",
-            "mobile_element_type", "mol_type", "not_for_annotation", "note",
-            "num_ident", "num_mismatch", "number", "partial", "pct_coverage",
-            "pct_coverage_hiqual", "pct_identity_gap", "pct_identity_gapopen_only",
-            "pct_identity_ungap", "product", "product_coverage", "protein_id",
-            "pseudo", "rank", "recombination_class", "regulatory_class",
-            "rpt_family", "rpt_type", "rpt_unit_range", "rpt_unit_seq",
-            "satellite", "splices", "standard_name", "start_range", "tag",
-            "tissue-type", "transl_except", "transl_table", "weighted_identity",
-        ],
-        axis=1,
-    )
+    gff_df.drop(drop_filter, inplace=True, axis=1)
 
     # Apply extract_hgnc_id function to create 'hgnc_id' column
     gff_df["hgnc_id"] = gff_df["Dbxref"].apply(extract_hgnc_id)
@@ -277,25 +279,23 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         ]
 
     except Exception as err:
-        print(f"Error: {err}")
         print("Please check the format of the coordinates in the annotation file.")
-        empty_df = pd.DataFrame(
-            columns=["chromosome", "start", "end", "annotation", "gene"])
-        return empty_df
+        raise RuntimeError(f"Error: {err}")
 
     try:
-        coordinates_df["chromosome"] = coordinates_df["chromosome"].astype('str')
+        coordinates_df["chromosome"] = coordinates_df["chromosome"].astype(
+            'str')
         coordinates_df["start"] = coordinates_df["start"].astype('Int64')
         coordinates_df["end"] = coordinates_df["end"].astype('Int64')
-        coordinates_df["annotation"] = coordinates_df["annotation"].astype('str')
+        coordinates_df["annotation"] = coordinates_df["annotation"].astype(
+            'str')
     except ValueError as e:
         print(f"Error: {e}")
 
     return coordinates_df
 
 
-def parse_annotation_tsv(path: str,
-                         gff_transcripts_df: pd.DataFrame):
+def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
     """
     Parse an annotation TSV file and separate it into dataframes for HGNC IDs,
     Transcript IDs, and Coordinates, then merge them with a GFF dataframe.
@@ -315,91 +315,103 @@ def parse_annotation_tsv(path: str,
         2. The coordinated dataframe for coordinates to be appended
            to a BED file later (coordinates_df).
     """
-    df = pd.read_csv(path, sep="\t", dtype={
-                     'ID': 'string', 'annotation': 'string'})
-    # Create masks for HGNC, Transcript, and Coordinates dataframes
+    try:
+        df = pd.read_csv(path, sep="\t", dtype={
+                         'ID': 'string', 'annotation': 'string'})
+    except Exception as err:
+        print(err)
+        print("Please check the format of the annotation file.")
+        raise err
+
     assert 'ID' in df.columns, 'The annotation file does not contain an "ID" column'
+    if df.empty:
+        raise RuntimeError("The annotation file is empty.")
 
     hgnc_mask = df["ID"].str.startswith("HGNC:") | df["ID"].str.isnumeric()
-    # Use regex to match transcript IDs/chromosome coordinates
     pattern_nm = r'^NM'
     transcript_mask = df["ID"].str.contains(pattern_nm, case=True)
     pattern_chr = r'^(chr|chromosome|Chr|Chromosome)'
     coordinates_mask = df["ID"].str.contains(pattern_chr, case=False)
 
-    # Use masks to filter the original dataframe
     not_separated_rows = df[~(hgnc_mask | transcript_mask | coordinates_mask)]
 
-    # for hgcnID and transcriptID don't exist
     if not_separated_rows.empty:
         print("All rows were separated successfully")
     else:
-        print(f"These rows were not separated: \n {not_separated_rows}")
+        print(f"These rows were not separated into HGNC ids, transcripts or coordinates. \n"
+              f"These rows will not be present in the final bed file: \n {not_separated_rows}")
 
-    # Create dataframes for HGNC IDs, Transcript IDs, and Coordinates
     hgnc_df = df[hgnc_mask]
     transcript_df = df[transcript_mask]
     coordinates_df = df[coordinates_mask]
-    # set dtype for each column
-    dtype_mapping_hgnc = {
-        "ID": "Int64",
-        "annotation": "category",
-    }
 
-    dtype_mapping_transcript = {
-        "ID": "str",
-        "annotation": "category",
-    }
-
-    dtype_mapping_gff = {
-        "hgnc_id": "Int64",
-    }
+    dtype_mapping_hgnc = {"ID": "Int64", "annotation": "category"}
+    dtype_mapping_transcript = {"ID": "str", "annotation": "category"}
+    dtype_mapping_gff = {"hgnc_id": "Int64"}
 
     hgnc_df = hgnc_df.astype(dtype_mapping_hgnc)
     transcript_df = transcript_df.astype(dtype_mapping_transcript)
     gff_transcripts_df = gff_transcripts_df.astype(dtype_mapping_gff)
-    # Rename columns for clarity
+
     hgnc_df = hgnc_df.rename(columns={"ID": "hgnc_id"})
     transcript_df = transcript_df.rename(columns={"ID": "transcript_id"})
     coordinates_df = coordinates_df.rename(columns={"ID": "Coordinates"})
 
-    # Remove everything after '.' in the "transcript_id" column
-    gff_transcripts_df["transcript_id"] = (
-        gff_transcripts_df["transcript_id"].str.split(".").str[0]
-    )
-    transcript_df["transcript_id"] = (
-        transcript_df["transcript_id"].str.split(".").str[0]
-    )
+    gff_transcripts_df["transcript_id"] = gff_transcripts_df["transcript_id"].str.split(
+        ".").str[0]
+    transcript_df["transcript_id"] = transcript_df["transcript_id"].str.split(
+        ".").str[0]
 
-    # Merge the HGNC and Transcript dataframes with gff dataframe based on the 'ID' column
-    merged_hgnc_df = gff_transcripts_df.merge(
-        hgnc_df, on="hgnc_id", how="inner")
-    merged_transcript_df = gff_transcripts_df.merge(
-        transcript_df, on="transcript_id", how="inner"
-    )
+    return hgnc_df, transcript_df, coordinates_df
 
-    # Find the rows dropped during the merge
-    dropped_hgnc_rows = hgnc_df[~hgnc_df["hgnc_id"].isin(
-        merged_hgnc_df["hgnc_id"])]
-    dropped_transcript_rows = transcript_df[
-        ~transcript_df["transcript_id"].isin(
-            merged_transcript_df["transcript_id"])
-    ]
-    if not dropped_hgnc_rows.empty:
-        print(f"Summary of dropped HGNC rows: \n {dropped_hgnc_rows}")
-    else:
-        print("All HGNC rows were merged successfully")
-    if not dropped_transcript_rows.empty:
-        print(
-            f"Summary of dropped Transcript rows: \n {dropped_transcript_rows}")
-    else:
-        print("All Transcript rows were merged successfully")
-    # Concatenate the merged dataframes
-    hgnc_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
 
-    # Coordinates dataframe split into columns
+def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
+                     coordinates_df: pd.DataFrame,
+                     gff_df: pd.DataFrame):
+    """
+    Extract the corresponding transcripts from the GFF dataframe using HGNC_ID.
+    Then Merge based on the HGNC_ID field into final dataframes
+    with just coordinates and annotation.
+
+    Parameters
+    ----------
+    hgnc_df : pd.DataFrame
+        A dataframe containing HGNC IDs with annotation.
+    transcript_df : pd.DataFrame
+        A dataframe containing transcript information with annotation.
+    coordinates_df : pd.DataFrame
+        A dataframe containing coordinates with annotation.
+    gff_df : pd.DataFrame
+        A dataframe containing GFF information including transcript IDs
+        and HGNC_Ids and coordinate information for producing the final bed.
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, pd.DataFrame]
+        A tuple containing two dataframes:
+        1. final_merged_df
+            The merged dataframe for HGNC IDs and transcripts.
+        2. coordinates_df
+            The dataframe with the coordinates to be appended
+            to a BED file later.
+    """
+    if hgnc_df.empty:
+        print("No HGNC IDs found in the annotation file.")
+        hgnc_df = pd.DataFrame(columns=["hgnc_id", "annotation"])
+    if transcript_df.empty:
+        print("No Transcript IDs found in the annotation file.")
+        transcript_df = pd.DataFrame(columns=["transcript_id", "annotation"])
+
+    gff_df["transcript_id"] = gff_df["transcript_id"].str.split(".").str[0]
+    merged_hgnc_df = gff_df.merge(hgnc_df, on="hgnc_id", how="inner")
+    merged_transcript_df = gff_df.merge(
+        transcript_df, on="transcript_id", how="inner")
+
+    final_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
+
     coordinates_df = convert_coordinates(coordinates_df)
-    return hgnc_merged_df, coordinates_df
+
+    return final_merged_df, coordinates_df
 
 
 def extract_hgnc_id(dbxref_str: str):
@@ -525,10 +537,12 @@ def merge_overlapping(bed_df: pd.DataFrame):
 
     Returns
     -------
-    merged_df: dataframe
+    merged_df_final: dataframe
         dataframe of merged rows with columns: chromosome, start,
-        end, annotation
+        end, annotation. Index is reset
     """
+    if bed_df.empty:
+        raise RuntimeError("No BED entries found in the annotation file.")
     # Sort by chromosome, start, and end
     # This makes sure that overlapping regions are next to each other.
 
@@ -558,7 +572,9 @@ def merge_overlapping(bed_df: pd.DataFrame):
 
     merged_rows.append(current_row)  # Append the last merged row
     merged_df = pd.DataFrame(merged_rows)
-    return merged_df
+    merged_df_final = merged_df.reset_index(drop=True)
+
+    return merged_df_final
 
 
 def config_igv_report(args: argparse.Namespace):
@@ -570,7 +586,7 @@ def config_igv_report(args: argparse.Namespace):
     ----------
     args : argeparse object
         argeparse object with the following attributes:
-        reference_genome, output_file_suffix, gff_file/pickle_file,
+        genome_build, output_file_suffix, gff_file/pickle_file,
         annotation_file/transcript_file, assembly_file, and flanking.
 
     Returns
@@ -578,9 +594,9 @@ def config_igv_report(args: argparse.Namespace):
     None
     """
     # assign vars.
-    maf_file = f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
-    bed_file = f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
-    genome = args.reference_genome
+    maf_file = f"output_{args.genome_build}_{args.output_file_suffix}.maf"
+    bed_file = f"output_{args.genome_build}_{args.output_file_suffix}.bed"
+    genome = args.genome_build
     fasta_ref = args.reference_file_for_igv
     info_columns = []
     title = f"{args.output_file_suffix}_report"
@@ -639,17 +655,30 @@ def write_bed(annotation_df: pd.DataFrame,
     bed file: (file) bed file containing the relevant transcripts
         for annotation for visualisation in igv.
     """
+    # Check data
+    if annotation_df.empty and coordinates_df.empty:
+        raise RuntimeError(
+            "No annotation or coordinates found in the annotation file.")
+    if annotation_df.empty:
+        print("No annotation found in the annotation file.")
+        annotation_df = pd.DataFrame(
+            columns=["hgnc_id", "annotation", "gene", "transcript_id"]
+        )
+    if coordinates_df.empty:
+        print("No coordinates found in the annotation file.")
+        coordinates_df = pd.DataFrame(
+            columns=["chromosome", "start", "end", "annotation", "gene"]
+        )
     # Create BED file with flanking regions
     print("Creating BED file")
     print("Adding flanking regions")
-
     # Apply the function to the specified column
     annotation_df["start_flank"] = annotation_df["start"].apply(
         subtract_and_replace, flanking_int=args.flanking
-        )
+    )
     annotation_df["end_flank"] = annotation_df["end"].apply(
         subtract_and_replace, flanking_int=args.flanking
-        )
+    )
 
     bed_columns = [
         "seq_id",
@@ -661,7 +690,6 @@ def write_bed(annotation_df: pd.DataFrame,
     ]
     bed_df = annotation_df[bed_columns]
     bed_df = bed_df.reindex()
-    print(f"Summary of BED file df before collapsing \n {bed_df.head()}")
     # Extract chromosome from seqid and create the 'chromosome' column
     accession_to_chromosome = read_assembly_mapping(args.assembly_summary)
     # Add a new column 'chromosome' by mapping accession to chromosome identifier
@@ -679,16 +707,14 @@ def write_bed(annotation_df: pd.DataFrame,
     # Rename columns
     new_column_names = {"start_flank": "start", "end_flank": "end"}
     collapsed_df.rename(columns=new_column_names, inplace=True)
-    print(coordinates_df.head())
     collapsed_df = pd.concat(
         [collapsed_df, coordinates_df], axis=0, ignore_index=True)
-    print(collapsed_df.head(10))
     # Write the collapsed data to an output file
     output_file_name_maf = (
-        f"output_{args.reference_genome}_{args.output_file_suffix}.maf"
+        f"output_{args.genome_build}_{args.output_file_suffix}.maf"
     )
     output_file_name_bed = (
-        f"output_{args.reference_genome}_{args.output_file_suffix}.bed"
+        f"output_{args.genome_build}_{args.output_file_suffix}.bed"
     )
     collapsed_df.to_csv(output_file_name_maf, sep="\t",
                         header=True, index=False)
@@ -708,26 +734,23 @@ def main():
 
     # read in pickle file if provided
     if args.pickle:
-        transcripts_df = parse_pickle(args.pickle)
+        gff_transcripts_df = parse_pickle(args.pickle)
         print("Parsed pickle file")
     else:
         # Parse gff file
-        transcripts_df = parse_gff(args.gff_file)
+        gff_transcripts_df = parse_gff(args.gff_file)
 
     # Read the annotation file into a pandas DataFrame
-    if args.annotation_file:
-        annotation_df, coordinates_df = parse_annotation_tsv(
-            args.annotation_file, transcripts_df
-        )
-
-    # Read the transcript annotation file
-    elif args.transcript_file:
-        annotation_df, coordinates_df = parse_annotation_tsv(
-            args.transcript_file, transcripts_df
-        )
+    hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
+        args.annotation_file, gff_transcripts_df
+    )
+    # Merge the annotation DataFrame with the GFF DataFrame
+    # Concat hgnc and transcript dataframes
+    annotation_df, coordinates_df = merge_dataframes(
+        hgnc_df, transcript_df, coordinates_df, gff_transcripts_df
+    )
 
     # Merge NM entries with matching HGNC IDs
-    print("Merging annotation and gff dataframes")
     write_bed(annotation_df, coordinates_df, args)
 
     # Create an IGV report

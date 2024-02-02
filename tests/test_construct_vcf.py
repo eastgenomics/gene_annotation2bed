@@ -3,10 +3,9 @@ import pandas as pd
 import pytest
 import os
 from unittest.mock import patch
-from construct_vcf import ConstructVCF, parse_args
+from scripts.construct_vcf import ConstructVCF, parse_args
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
-
 
 class TestConstructVCF(unittest.TestCase):
     def setUp(self):
@@ -210,9 +209,7 @@ class TestConstructVCF(unittest.TestCase):
 
         # Convert the data types of the specified columns
         expected_df = expected_df.astype(columns_to_convert)
-        print("compare dfs")
-        print(vcf_df)
-        print(expected_df)
+
         pd.testing.assert_frame_equal(expected_df, vcf_df)
 
 
