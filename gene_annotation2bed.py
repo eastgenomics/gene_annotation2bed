@@ -5,13 +5,24 @@ Example cmd (TODO: add example cmd once script is finalized):
 
 
 Current working cmd:
-/home/rswilson1/anaconda3/envs/Annotation_app/bin/python \
+
 gene_annotation2bed.py \
 -pkl ./tests/test_data/refseq_gff_preprocessed.pkl \
--ig data/mixed_dataset.tsv \
+-ann data/mixed_dataset.tsv \
 -ref_igv ./tests/test_data/hs37d5.fa -build hg19 -f 5 \
 --assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
 -o "test_X"
+
+or
+
+gene_annotation2bed.py \
+-gff data/GCF_000001405.25_GRCh37.p13_genomic.gff \
+-ann data/mixed_dataset.tsv \
+-ref_igv ./tests/test_data/hs37d5.fa \
+-build hg19 -f 5 \
+--assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
+-o "testing"
+
 """
 
 import argparse
@@ -290,7 +301,8 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         coordinates_df["annotation"] = coordinates_df["annotation"].astype(
             'str')
     except ValueError as e:
-        print(f"Error: {e}")
+        raise ValueError(
+            f"Error: {e}, please check the format of the coordinates in the annotation file.")
 
     return coordinates_df
 
@@ -452,8 +464,7 @@ def extract_hgnc_id(dbxref_str: str):
         else:
             return None
     except ValueError as e:
-        print(f"Error: {e}")
-        return hgnc_ids[0]
+        raise ValueError(f"Error: {e}") from e
 
 
 def read_assembly_mapping(assembly_file: str):
@@ -539,7 +550,7 @@ def merge_overlapping(bed_df: pd.DataFrame):
     -------
     merged_df_final: dataframe
         dataframe of merged rows with columns: chromosome, start,
-        end, annotation. Index is reset
+        end, annotation, gene. Index is reset
     """
     if bed_df.empty:
         raise RuntimeError("No BED entries found in the annotation file.")
@@ -572,6 +583,12 @@ def merge_overlapping(bed_df: pd.DataFrame):
 
     merged_rows.append(current_row)  # Append the last merged row
     merged_df = pd.DataFrame(merged_rows)
+    merged_df = merged_df[['chromosome', 'start_flank',
+                           'end_flank', 'annotation', 'gene']]
+    merged_df = merged_df.rename(
+        columns={'start_flank': 'start', 'end_flank': 'end'}
+    )
+
     merged_df_final = merged_df.reset_index(drop=True)
 
     return merged_df_final
@@ -661,9 +678,13 @@ def write_bed(annotation_df: pd.DataFrame,
             "No annotation or coordinates found in the annotation file.")
     if annotation_df.empty:
         print("No annotation found in the annotation file.")
+
         annotation_df = pd.DataFrame(
-            columns=["hgnc_id", "annotation", "gene", "transcript_id"]
+            columns=["seq_id", "start", "end",
+                     "hgnc_id", "annotation", "gene",
+                     "transcript_id"]
         )
+
     if coordinates_df.empty:
         print("No coordinates found in the annotation file.")
         coordinates_df = pd.DataFrame(
@@ -697,18 +718,12 @@ def write_bed(annotation_df: pd.DataFrame,
         lambda x: map_accession_to_chromosome(x, accession_to_chromosome)
     )
     print(f"Summary of BED file df before collapsing \n {bed_df.head()}")
-
+    # Merge the coordinates DataFrame with the BED DataFrame
+    joint_bed_df = pd.concat(
+        [bed_df, coordinates_df], axis=0, ignore_index=True)
     # Merge overlapping entries
-    collapsed_df = merge_overlapping(bed_df).reset_index(drop=True)
-    print(f"Summary of BED file df after collapsing \n {collapsed_df.head()}")
-    # Reorder the columns to match the BED format
-    cols = ["chromosome", "start_flank", "end_flank", "annotation", "gene"]
-    collapsed_df = collapsed_df[cols]
-    # Rename columns
-    new_column_names = {"start_flank": "start", "end_flank": "end"}
-    collapsed_df.rename(columns=new_column_names, inplace=True)
-    collapsed_df = pd.concat(
-        [collapsed_df, coordinates_df], axis=0, ignore_index=True)
+    collapsed_df = merge_overlapping(joint_bed_df)
+
     # Write the collapsed data to an output file
     output_file_name_maf = (
         f"output_{args.genome_build}_{args.output_file_suffix}.maf"
