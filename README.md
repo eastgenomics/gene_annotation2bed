@@ -5,9 +5,18 @@ To provide bed files for custom gene-level annotation with VEP.
 This custom script processes a list of ids (HGNC, transcript) or coordinates with associated annotation, into a comprehensive bed file for the corresponding refseq transcripts for each ID entry.
 
 i.e It could take a list of genes with associated annotation for example Gene A is an oncogene.
-It would then find all the corresponding transcripts for that gene and create a bed file for annotating VCFs using VEP. This removes the reliance on picking gene coordinates and directly annotates transcripts
-we use for our pipelines.
+It would then find all the corresponding transcripts for that gene and create a bed file for annotating VCFs using VEP. This removes the reliance on picking gene coordinates and directly annotates transcripts we use for our pipelines.
 
+This Bed file can then be used to provide custom annotation with VEP, see VEP documentation for further details on using custom annotation ([VEP Docs](https://www.ensembl.org/info/docs/tools/vep/script/vep_custom.html)).
+
+Note: The following steps must be completed before the BED can be used with VEP.
+
+```bash
+grep -v "#" myData.bed | sort -k1,1 -k2,2n -k3,3n -t$'\t' | bgzip -c > myData.bed.gz
+tabix -p bed myData.bed.gz
+```
+
+Workflow diagram showing TSV containing IDs and annotation to bed file and how it is used in VEP and visualised in IGV:
 ![Workflow diagram showing TSV containing IDs and annotation to bed file and how it is used in VEP and visualised in IGV using a VCF](https://raw.githubusercontent.com/eastgenomics/gene_annotation2bed/sprint_2/Workflow.png)
 
 ---
@@ -24,6 +33,11 @@ we use for our pipelines.
 - List of ids and annotation information in TSV format.
 - Human Genome Reference (i.e. hs37d5).
 - RefSeq Transcripts file (gff3) from 001_reference.
+![Image of refseq tsv structure, first 15 lines](images/image.png)
+
+---
+## Notes
+The current working logic of this script is to select only refseq transcripts with NM_ prefix.
 
 ---
 
@@ -43,12 +57,12 @@ we use for our pipelines.
 - `-ref_igv`, `--reference_file_for_igv` (`file`): Path to the Reference genome fasta file for igv_reports, used in generating IGV reports.
 
 ## Misc
-- `-pickle` (`str`): Import GFF as a pickle file, this is for testing mostly to speed-up running, so gff isn't processed each time.
+- `--pickle` or `-pkl` (`str`): Import GFF as a pickle file, this is for testing mostly to speed-up running, so gff isn't processed each time.
 
 ## Example Command
 
 ```bash
-python gene_annotation2bed.py -ig annotation.tsv -o output_suffix -ref hg38 -f 5 --assembly_summary assembly_summary.txt -ref_igv ref_genome.fasta --hgnc_dump_path hgnc_info.tsv -gff your_file.gff -pickle pickle_file.pkl
+python gene_annotation2bed.py -ann annotation.tsv -o output_suffix -ref hg38 -f 5 --assembly_summary assembly_summary.txt -ref_igv ref_genome.fasta --hgnc_dump_path hgnc_info.tsv -gff your_file.gff -pickle pickle_file.pkl
 ```
 
 ---
@@ -66,7 +80,7 @@ install using `requirements.txt`. `pip install requirements.txt`
 ---
 
 ## How does this app work?
-
+Overview of workflow of app.
 ![Workflow diagram showing TSV containing IDs and annotation to bed file and how it is used in VEP and visualised in IGV using a VCF](https://raw.githubusercontent.com/eastgenomics/gene_annotation2bed/sprint_2/Workflow.png)
 
 ## IGV reports output
@@ -76,4 +90,5 @@ IGV report:
 
 The script produces a HTML report of all the bed file entries. Displayed in IGV with the refseq track
 and bed file aligned with the respecive annotation.
+
 
