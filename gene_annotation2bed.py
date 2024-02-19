@@ -264,6 +264,13 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
     +------------+-------+-------+----------------------+
     | chr1       | 11874 | 14409 | promoter_of_interest |
     +------------+-------+-------+----------------------+
+
+    Raises:
+    -------
+    ValueError
+        If the coordinates are not in the expected format.
+    RuntimeError
+        If the coordinates dataframe is empty.
     """
     # If the "Coordinates" column is empty, return an empty dataframe:
     if coordinates_df.empty:
@@ -326,6 +333,14 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
         1. The merged dataframe for HGNC IDs and transcripts. (hgnc_merged_df)
         2. The coordinated dataframe for coordinates to be appended
            to a BED file later (coordinates_df).
+
+    Raises
+    ------
+    RuntimeError
+        If the annotation file is empty.
+    RuntimeError
+        If the annotation file can't import via pandas
+        due to various problems with the annotation file.
     """
     try:
         df = pd.read_csv(path, sep="\t", dtype={
@@ -333,7 +348,7 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
     except Exception as err:
         print(err)
         print("Please check the format of the annotation file.")
-        raise err
+        raise RuntimeError(f"Error: {err}")
 
     assert 'ID' in df.columns, 'The annotation file does not contain an "ID" column'
     if df.empty:
@@ -551,6 +566,11 @@ def merge_overlapping(bed_df: pd.DataFrame):
     merged_df_final: dataframe
         dataframe of merged rows with columns: chromosome, start,
         end, annotation, gene. Index is reset
+
+    Raises
+    ------
+    RuntimeError
+        If the bed file is empty.
     """
     if bed_df.empty:
         raise RuntimeError("No BED entries found in the annotation file.")
@@ -671,6 +691,10 @@ def write_bed(annotation_df: pd.DataFrame,
     -------
     bed file: (file) bed file containing the relevant transcripts
         for annotation for visualisation in igv.
+    Raises
+    ------
+    RuntimeError
+        If no annotation or coordinates found in the annotation file.
     """
     # Check data
     if annotation_df.empty and coordinates_df.empty:
