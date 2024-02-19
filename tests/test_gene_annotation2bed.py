@@ -320,7 +320,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         """
         test no pandas import as empty file.
         """
-        expected_output = "No columns to parse from file"
+        expected_output = "Error: No columns to parse from file"
         path = f"{TEST_DATA_DIR}/emptyfile.tsv"
         with self.assertRaises(pd.errors.EmptyDataError) as cm:
             path = f"{TEST_DATA_DIR}/empty_file.tsv"
