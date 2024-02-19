@@ -348,7 +348,7 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
     except Exception as err:
         print(err)
         print("Please check the format of the annotation file.")
-        raise RuntimeError(f"Error: {err}")
+        raise pd.errors.EmptyDataError(f"Error: {err}")
 
     assert 'ID' in df.columns, 'The annotation file does not contain an "ID" column'
     if df.empty:
