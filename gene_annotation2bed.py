@@ -209,7 +209,6 @@ def parse_gff(gff_file):
     }
 
     gff_df = gff_df.astype(dtype_mapping)
-
     # Filter GFF DataFrame to select entries with 'NM' type
     transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
     return transcripts_df
@@ -414,13 +413,11 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
 
     Returns
     -------
-    Tuple[pd.DataFrame, pd.DataFrame]
-        A tuple containing two dataframes:
-        1. final_merged_df
-            The merged dataframe for HGNC IDs and transcripts.
-        2. coordinates_df
-            The dataframe with the coordinates to be appended
-            to a BED file later.
+    final_merged_df
+        The merged dataframe for HGNC IDs and transcripts.
+    coordinates_df
+        The dataframe with the coordinates to be appended
+        to a BED file later.
     """
     if hgnc_df.empty:
         print("No HGNC IDs found in the annotation file.")
@@ -431,13 +428,31 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
 
     gff_df["transcript_id"] = gff_df["transcript_id"].str.split(".").str[0]
     merged_hgnc_df = gff_df.merge(hgnc_df, on="hgnc_id", how="inner")
+    # check for loss of hgnc ids
+    if len(merged_hgnc_df["hgnc_id"].unique()) != len(hgnc_df["hgnc_id"].unique()):
+        lost_hgnc_ids = set(hgnc_df["hgnc_id"].unique(
+        )) - set(merged_hgnc_df["hgnc_id"].unique())
+        print("Lost HGNC IDs in merge:")
+        for hgnc_id in lost_hgnc_ids:
+            print(hgnc_id)
     merged_transcript_df = gff_df.merge(
         transcript_df, on="transcript_id", how="inner")
+    # check for loss of transcripts
+    lost_transcript_ids = (
+            set(transcript_df["transcript_id"].unique()) -
+                set(merged_transcript_df["transcript_id"].unique())
+            )
+    if lost_transcript_ids:
+        print(f"Lost Transcript IDs in merge: {[id for id in lost_transcript_ids]}")
 
     final_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
-
     coordinates_df = convert_coordinates(coordinates_df)
 
+    lost_ids = lost_hgnc_ids.union(lost_transcript_ids)
+    print(
+        f"IDs removed during merge: {lost_ids}.\n",
+          "These won't be present in the final bed file."
+        )
     return final_merged_df, coordinates_df
 
 
@@ -668,7 +683,7 @@ def subtract_and_replace(position, flanking_int):
     result : list
         list of values with flanking subtracted, minimum value = 0.
     """
-    return max(1, position - flanking_int)
+    return int(max(1, position - flanking_int))
 
 
 def write_bed(annotation_df: pd.DataFrame,
@@ -716,7 +731,6 @@ def write_bed(annotation_df: pd.DataFrame,
         )
     # Create BED file with flanking regions
     print("Creating BED file")
-    print("Adding flanking regions")
     # Apply the function to the specified column
     annotation_df["start_flank"] = annotation_df["start"].apply(
         subtract_and_replace, flanking_int=args.flanking
@@ -743,11 +757,34 @@ def write_bed(annotation_df: pd.DataFrame,
     )
     print(f"Summary of BED file df before collapsing \n {bed_df.head()}")
     # Merge the coordinates DataFrame with the BED DataFrame
+    # Set dtypes for the first DataFrame
+    bed_df = bed_df.astype({
+        "seq_id": "str",
+        "start_flank": "Int64",
+        "end_flank": "Int64",
+        "hgnc_id": "Int64",
+        "annotation": "str",
+        "gene": "str"
+    })
+    coordinates_df = coordinates_df.rename(columns={
+        "start": "start_flank",
+        "end": "end_flank",
+    })
+    # Set dtypes for the second DataFrame
+    coordinates_df = coordinates_df.astype({
+        "chromosome": "str",
+        "start_flank": "Int64",
+        "end_flank": "Int64",
+        "annotation": "str",
+        "gene": "str"
+    })
+
+    # Merge the two DataFrames
     joint_bed_df = pd.concat(
-        [bed_df, coordinates_df], axis=0, ignore_index=True)
+        [bed_df, coordinates_df], axis=0, ignore_index=True
+        )
     # Merge overlapping entries
     collapsed_df = merge_overlapping(joint_bed_df)
-
     # Write the collapsed data to an output file
     output_file_name_maf = (
         f"output_{args.genome_build}_{args.output_file_suffix}.maf"
