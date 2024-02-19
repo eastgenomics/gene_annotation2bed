@@ -20,10 +20,10 @@ import pytest
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
 
-
 TEST_DATA_DIR = (
     os.path.join(os.path.dirname(__file__), 'test_data')
 )
+
 
 class TestParseGFF(unittest.TestCase):
     """
@@ -138,6 +138,7 @@ class TestParseGFF(unittest.TestCase):
         for col in unwanted_columns:
             self.assertNotIn(col, self.test_df.columns)
 
+
 class TestExtractHGNCID(unittest.TestCase):
     def test_extract_hgnc_id_found(self):
         """
@@ -159,17 +160,15 @@ class TestExtractHGNCID(unittest.TestCase):
     def test_extract_hgnc_id_multiple_entries(self):
         """
         Checking the passing of HGNC IDs when multiple are found.
-        Currently this passes and selects the first.
         Only one HGNC ID should be found per gene.
-        Should raise an error but take first HGNC_id.
+        tests that an error is raised.
         """
-        attributes_str = "Dbxref=GeneID:123,HGNC:456,HGNC:789"
-        result = bed.extract_hgnc_id(attributes_str)
-        self.assertEqual(result, 456)
+        with self.assertRaises(ValueError):
+            attributes_str = "Dbxref=GeneID:123,HGNC:HGNC:456,HGNC:HGNC:789"
+            _ = bed.extract_hgnc_id(attributes_str)
 
 
 class TestConvertCoordinates(unittest.TestCase):
-
     def test_convert_coordinates(self):
         """
         Testing the extraction of HGNC ID from the attributes string.
@@ -321,7 +320,7 @@ class TestParseAnnotationTsv(unittest.TestCase):
         """
         test no pandas import as empty file.
         """
-        expected_output = "No columns to parse from file"
+        expected_output = "Error: No columns to parse from file"
         path = f"{TEST_DATA_DIR}/emptyfile.tsv"
         with self.assertRaises(pd.errors.EmptyDataError) as cm:
             path = f"{TEST_DATA_DIR}/empty_file.tsv"
@@ -497,8 +496,6 @@ class TestWriteBed(unittest.TestCase):
         assert not os.path.exists("output_.bed")
         assert not os.path.exists("output_.maf")
 
-    # Additional tests for normal function with example annotation df and coordinates df
-
     def test_write_bed_normal_function(self):
         """
         Test the write_bed function with example annotation and coordinates dataframes.
@@ -520,6 +517,49 @@ class TestWriteBed(unittest.TestCase):
         # Clean up - delete the generated files
         os.remove("output_hg38_test.bed")
         os.remove("output_hg38_test.maf")
+
+    @pytest.fixture(autouse=True)
+    def capsys(self, capsys):
+        self.capsys = capsys
+
+    def test_empty_annotation_df(self):
+        """
+        Test if function handles empty annotation_df properly.
+        """
+        # Create empty DataFrame for annotation_df and non-empty DataFrame for coordinates_df
+        annotation_df = pd.DataFrame()
+        # ["chromosome", "start", "end", "annotation", "gene"]
+        coordinates_df = pd.DataFrame({
+            'chromosome': ['1', '2'],
+            'start': [100, 200],
+            'end': [150, 250],
+            'annotation': ['anno1', 'anno2'],
+            'gene': ['gene1', 'gene2']
+        })
+
+        # Create argparse.Namespace object with required arguments
+        args = argparse.Namespace(
+            flanking=100,
+            assembly_summary='tests/test_data/GCF_000001405.25_GRCh37.p13_assembly_report.txt',
+            genome_build='hg38',
+            output_file_suffix='test'
+        )
+
+        # Call the write_bed function
+        bed.write_bed(annotation_df, coordinates_df, args)
+
+        # Get the printed output using capsys
+        captured = self.capsys.readouterr()
+        printed_output = captured.out.split("\n")
+        with self.subTest():
+            # Assert that the function prints
+            # "No annotation found in the annotation file."
+            assert printed_output[0] == "No annotation found in the annotation file."
+            # Add assertions to check if the function
+            # returns the correct DataFrame for coordinates_df
+            assert annotation_df.empty
+            assert coordinates_df.equals(coordinates_df)
+            # Check if coordinates_df is returned unchanged
 
 
 class TestSubtractAndReplace(unittest.TestCase):
@@ -579,9 +619,16 @@ class TestMergeOverlapping(unittest.TestCase):
             "chromosome": ["chr1", "chr2", "chr3"]
         })
         merged_df = bed.merge_overlapping(bed_df)
-        assert merged_df.equals(bed_df)
+        expected_df = pd.DataFrame({
+            "chromosome": ["chr1", "chr2", "chr3"],
+            "start": [100, 200, 300],
+            "end": [150, 250, 350],
+            "annotation": ["anno1", "anno2", "anno3"],
+            "gene": ["gene1", "gene2", "gene3"]
+        })
+        assert merged_df.equals(expected_df)
 
-    def test_merge_overlapping_with_overlap(self):
+    def test_merge_overlapping_with_overlap_multi_gene(self):
         """
         Test merge_overlapping function with overlapping regions.
         """
@@ -598,16 +645,49 @@ class TestMergeOverlapping(unittest.TestCase):
 
         # Define the expected merged dataframe
         expected_df = pd.DataFrame({
-            "seq_id": ["seq1", "seq2"],
-            "start_flank": [100, 200],
-            "end_flank": [180, 270],
-            "hgnc_id": ["hgnc1", "hgnc4"],
+            "chromosome": ["chr1", "chr2"],
+            "start": [100, 200],
+            "end": [180, 270],
             "annotation": ["anno1", "anno2"],
             "gene": ["gene1", "gene2"],
-            "chromosome": ["chr1", "chr2"]
         })
 
         assert merged_df.equals(expected_df)
+
+    def test_merge_overlapping_with_overlap_single_gene(self):
+        """
+        Test if handles overlapping coordinates for a single gene.
+        And returns correct collapsed dataframe with merged coordinates.
+        """
+        # Creating a sample DataFrame with overlapping end flanks
+        data = {
+            'seq_id': ['seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'seq6', 'seq7'],
+            'start_flank': [100, 200, 300, 400, 120, 180, 320],
+            'end_flank': [150, 250, 350, 450, 160, 220, 370],
+            'hgnc_id': ['hgnc1', 'hgnc1', 'hgnc1', 'hgnc1', 'hgnc1', 'hgnc1', 'hgnc1'],
+            'annotation': ['anno1', 'anno1', 'anno1', 'anno1', 'anno1', 'anno1', 'anno1'],
+            'gene': ['gene1', 'gene1', 'gene1', 'gene1', 'gene1', 'gene1', 'gene1'],
+            # 'chr' prefix removed
+            'chromosome': ['3', '3', '3', '3', '3', '3', '3']
+        }
+
+        # Creating the DataFrame
+        bed_df = pd.DataFrame(data)
+
+        # Merge the dataframes
+        merged_bed_df = bed.merge_overlapping(bed_df)
+
+        print(merged_bed_df)
+        # Assert that the merged DataFrame contains the expected merged regions correctly
+        expected_merged_df = pd.DataFrame({
+            'chromosome': ['3', '3', '3', '3'],  # 'chr' prefix removed
+            'start': [100, 180, 300, 400],
+            'end': [160, 250, 370, 450],
+            'annotation': ['anno1', 'anno1', 'anno1', 'anno1'],
+            'gene': ['gene1', 'gene1', 'gene1', 'gene1']
+        })
+
+        pd.testing.assert_frame_equal(merged_bed_df, expected_merged_df)
 
 
 if __name__ == '__main__':
