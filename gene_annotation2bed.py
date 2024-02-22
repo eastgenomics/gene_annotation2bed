@@ -207,7 +207,12 @@ def parse_gff(gff_file):
         "transcript_id": "str",
         "hgnc_id": "Int64",
     }
-
+    # GFF what to filter on. Select mRNA? or starts with NM_?
+    # print(gff_df.head())
+    # print(gff_df[gff_df["transcript_id"].str.startswith("NR_")])
+    # print(gff_df[gff_df["source"] == "RefSeq"])
+    # print(gff_df[gff_df["source"] == "BestRefSeq"])
+    # print(gff_df[gff_df["source"] != "BestRefSeq"])
     gff_df = gff_df.astype(dtype_mapping)
     # Filter GFF DataFrame to select entries with 'NM' type
     transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
@@ -829,8 +834,11 @@ def main():
     # Merge NM entries with matching HGNC IDs
     write_bed(annotation_df, coordinates_df, args)
 
-    # Create an IGV report
-    config_igv_report(args)
+    # Create an IGV report, if a reference file is provided
+    if args.reference_file_for_igv:
+        config_igv_report(args)
+    elif not args.reference_file_for_igv:
+        print("No IGV reference file provided. Skipping IGV report.")
 
 
 if __name__ == "__main__":
