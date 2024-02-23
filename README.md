@@ -31,8 +31,9 @@ Workflow diagram showing TSV containing IDs and annotation to bed file and how i
 ## What data are required for this script to run?
 
 - List of ids and annotation information in TSV format.
-- Human Genome Reference (i.e. hs37d5).
-- RefSeq Transcripts file (gff3) from 001_reference.
+- Human Genome Reference (i.e. hs37d5) for generating IGV report.
+- RefSeq Transcripts file (gff3; `GCF_000001405.25_GRCh37.p13_genomic.gff`) and corresponding gff assembly report, i.e.`GCF_000001405.25_GRCh37.p13_assembly_report.txt` from 001_reference
+  or from [Refseq FTP Server](https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Homo_sapiens/all_assembly_versions/).
 ![Image of refseq tsv structure, first 15 lines](images/image.png)
 
 ---
@@ -48,8 +49,8 @@ The current working logic of this script is to select only refseq transcripts wi
 - `-o`, `output` (`str`): Output file suffix, required for specifying the suffix for the generated output files.
 - `-build`, `--genome_build` (`str`): Reference genome build (hg19/hg38), choose either 'hg19' or 'hg38' based on your requirements.
 - `-f`, `--flanking` (`int`): Flanking size, an integer value representing the size of flanking regions for each gene, transcript or coordinates provided. Default = 0.
-- `-as`, `--assembly_summary` (`str`): Path to assembly summary file, necessary for the app to gather assembly information, this allows for the script to map between refseq accessions and chromosomes.
-- `-gff` (`str`): Path to GFF file containing all relevant transcripts for assay, available in 001_reference i.e. GCF_000001405.25_GRCh37.p13_genomic.gff.
+- `-as`, `--assembly_report` (`str`): Path to assembly report file, necessary for the app to gather assembly information, this allows for the script to map between refseq accessions and chromosomes. i.e. `GCF_000001405.25_GRCh37.p13_assembly_report.txt`.
+- `-gff` (`str`): Path to GFF file containing all relevant transcripts for assay, available in 001_reference i.e. `GCF_000001405.25_GRCh37.p13_genomic.gff`.
 
 ### Useful ones
 
@@ -62,7 +63,7 @@ The current working logic of this script is to select only refseq transcripts wi
 ## Example Command
 
 ```bash
-python gene_annotation2bed.py -ann annotation.tsv -o output_suffix -ref hg38 -f 5 --assembly_summary assembly_summary.txt -ref_igv ref_genome.fasta --hgnc_dump_path hgnc_info.tsv -gff your_file.gff -pickle pickle_file.pkl
+python gene_annotation2bed.py -ann annotation.tsv -o output_suffix -ref hg38 -f 5 --assembly_report assembly_report.txt -ref_igv ref_genome.fasta --hgnc_dump_path hgnc_info.tsv -gff your_file.gff -pickle pickle_file.pkl
 ```
 
 ---

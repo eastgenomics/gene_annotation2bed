@@ -10,7 +10,7 @@ gene_annotation2bed.py \
 -pkl ./tests/test_data/refseq_gff_preprocessed.pkl \
 -ann data/mixed_dataset.tsv \
 -ref_igv ./tests/test_data/hs37d5.fa -build hg19 -f 5 \
---assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
+--assembly_report data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
 -o "test_X"
 
 or
@@ -20,7 +20,7 @@ gene_annotation2bed.py \
 -ann data/mixed_dataset.tsv \
 -ref_igv ./tests/test_data/hs37d5.fa \
 -build hg19 -f 5 \
---assembly_summary data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
+--assembly_report data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
 -o "testing"
 
 """
@@ -83,9 +83,10 @@ def parse_args() -> argparse.Namespace:
         default=0
     )
     parser.add_argument(
-        "-as",
-        "--assembly_summary",
-        help="Path to assembly summary file",
+        "-ar",
+        "--assembly_report",
+        help="Path to assembly report file, containing information"
+             " on refseq accession to chromosome mapping.",
         required=True
     )
 
@@ -444,11 +445,12 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
         transcript_df, on="transcript_id", how="inner")
     # check for loss of transcripts
     lost_transcript_ids = (
-            set(transcript_df["transcript_id"].unique()) -
-                set(merged_transcript_df["transcript_id"].unique())
-            )
+        set(transcript_df["transcript_id"].unique()) -
+        set(merged_transcript_df["transcript_id"].unique())
+    )
     if lost_transcript_ids:
-        print(f"Lost Transcript IDs in merge: {[id for id in lost_transcript_ids]}")
+        print(
+            f"Lost Transcript IDs in merge: {[id for id in lost_transcript_ids]}")
 
     final_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
     coordinates_df = convert_coordinates(coordinates_df)
@@ -456,8 +458,8 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
     lost_ids = lost_hgnc_ids.union(lost_transcript_ids)
     print(
         f"IDs removed during merge: {lost_ids}.\n",
-          "These won't be present in the final bed file."
-        )
+        "These won't be present in the final bed file."
+    )
     return final_merged_df, coordinates_df
 
 
@@ -755,7 +757,7 @@ def write_bed(annotation_df: pd.DataFrame,
     bed_df = annotation_df[bed_columns]
     bed_df = bed_df.reindex()
     # Extract chromosome from seqid and create the 'chromosome' column
-    accession_to_chromosome = read_assembly_mapping(args.assembly_summary)
+    accession_to_chromosome = read_assembly_mapping(args.assembly_report)
     # Add a new column 'chromosome' by mapping accession to chromosome identifier
     bed_df.loc[:, "chromosome"] = bed_df["seq_id"].apply(
         lambda x: map_accession_to_chromosome(x, accession_to_chromosome)
@@ -787,7 +789,7 @@ def write_bed(annotation_df: pd.DataFrame,
     # Merge the two DataFrames
     joint_bed_df = pd.concat(
         [bed_df, coordinates_df], axis=0, ignore_index=True
-        )
+    )
     # Merge overlapping entries
     collapsed_df = merge_overlapping(joint_bed_df)
     # Write the collapsed data to an output file
