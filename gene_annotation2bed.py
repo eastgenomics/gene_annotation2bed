@@ -462,7 +462,7 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
     coordinates_df = convert_coordinates(coordinates_df)
 
     # Logic for printing out lost ids if present.
-    if lost_hgnc_ids & lost_transcript_ids:
+    if lost_hgnc_ids and lost_transcript_ids:
         lost_ids = lost_hgnc_ids.union(lost_transcript_ids)
     elif lost_hgnc_ids:
         lost_ids = lost_hgnc_ids

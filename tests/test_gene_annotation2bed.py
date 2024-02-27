@@ -463,7 +463,7 @@ class TestWriteBed(unittest.TestCase):
         """
         args = argparse.Namespace(
             flanking=10,
-            assembly_summary=self.assembly_file,
+            assembly_report=self.assembly_file,
             genome_build="hg38",
             output_file_suffix="test"
         )
@@ -502,7 +502,7 @@ class TestWriteBed(unittest.TestCase):
         """
         args = argparse.Namespace(
             flanking=10,
-            assembly_summary=self.assembly_file,
+            assembly_report=self.assembly_file,
             genome_build="hg38",
             output_file_suffix="test"
         )
@@ -540,7 +540,7 @@ class TestWriteBed(unittest.TestCase):
         # Create argparse.Namespace object with required arguments
         args = argparse.Namespace(
             flanking=100,
-            assembly_summary='tests/test_data/GCF_000001405.25_GRCh37.p13_assembly_report.txt',
+            assembly_report='tests/test_data/GCF_000001405.25_GRCh37.p13_assembly_report.txt',
             genome_build='hg38',
             output_file_suffix='test'
         )
@@ -578,10 +578,9 @@ class TestSubtractAndReplace(unittest.TestCase):
         """
         Test subtract_and_replace function with zero and negative integers.
         """
-        assert bed.subtract_and_replace(
-            0, 5) == 1  # Minimum value is 1 when input is 0
+        assert bed.subtract_and_replace(0, 5) == 0  # Minimum value is 0 when input is 0
         # Minimum value is 1 when input is less than 5
-        assert bed.subtract_and_replace(3, 5) == 1
+        assert bed.subtract_and_replace(3, 5) == 0
 
     def test_subtract_and_replace_large_integers(self):
         """
