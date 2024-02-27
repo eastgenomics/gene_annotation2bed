@@ -542,7 +542,8 @@ def read_assembly_mapping(assembly_file: str, build: str):
     # filter out na from chromosome column and turn accession and chromosome columns to dict
     assembly_df = assembly_df[~assembly_df[2].str.startswith("na")]
     if build == "GRCh37":
-        accession_to_chromosome = dict(zip(assembly_df[6], assembly_df[2])) # dict(zip(assembly_df[5], assembly_df[1]))
+        # dict(zip(assembly_df[5], assembly_df[1]))
+        accession_to_chromosome = dict(zip(assembly_df[6], assembly_df[2]))
         print(accession_to_chromosome)
         print("alt dict")
         print(dict(zip(assembly_df[5], assembly_df[1])))
@@ -810,6 +811,7 @@ def write_bed(annotation_df: pd.DataFrame,
     print("Creating BED file")
     # Convert the annotation_df to 0-based
     annotation_df["start"] = annotation_df["start"] - 1
+
     # Apply the function to the specified column
     annotation_df["start_flank"] = annotation_df["start"].apply(
         subtract_and_replace, flanking_int=args.flanking
@@ -829,7 +831,8 @@ def write_bed(annotation_df: pd.DataFrame,
     bed_df = annotation_df[bed_columns]
     bed_df = bed_df.reindex()
     # Extract chromosome from seqid and create the 'chromosome' column
-    accession_to_chromosome = read_assembly_mapping(args.assembly_report, args.genome_build)
+    accession_to_chromosome = read_assembly_mapping(
+        args.assembly_report, args.genome_build)
     # Add a new column 'chromosome' by mapping accession to chromosome identifier
     bed_df.loc[:, "chromosome"] = bed_df["seq_id"].apply(
         lambda x: map_accession_to_chromosome(x, accession_to_chromosome)

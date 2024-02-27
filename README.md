@@ -16,6 +16,9 @@ grep -v "#" myData.bed | sort -k1,1 -k2,2n -k3,3n -t$'\t' | bgzip -c > myData.be
 tabix -p bed myData.bed.gz
 ```
 
+When using VEP, the JSON should specify 'overlap' as in the VEP custom documentation when annotating gene/transcript level annotation. For more information on how to use custom annotation please see:
+[Internal Document which is helpful](https://cuhbioinformatics.atlassian.net/wiki/spaces/DV/pages/2605711365/VEP+Config+file).
+
 Workflow diagram showing TSV containing IDs and annotation to bed file and how it is used in VEP and visualised in IGV:
 ![Workflow diagram showing TSV containing IDs and annotation to bed file and how it is used in VEP and visualised in IGV using a VCF](https://raw.githubusercontent.com/eastgenomics/gene_annotation2bed/sprint_2/Workflow.png)
 
@@ -63,7 +66,7 @@ The current working logic of this script is to select only refseq transcripts wi
 ## Example Command
 
 ```bash
-python gene_annotation2bed.py -ann annotation.tsv -o output_suffix -ref hg38 -f 5 --assembly_report assembly_report.txt -ref_igv ref_genome.fasta --hgnc_dump_path hgnc_info.tsv -gff your_file.gff -pickle pickle_file.pkl
+python gene_annotation2bed.py -ann annotation.tsv -o output_suffix -ref hg38 -f 5 --assembly_report assembly_report.txt -ref_igv ref_genome.fasta -gff your_file.gff -pickle pickle_file.pkl
 ```
 
 ---
