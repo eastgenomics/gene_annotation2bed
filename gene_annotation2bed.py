@@ -23,6 +23,11 @@ gene_annotation2bed.py \
 --assembly_report data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
 -o "testing"
 
+
+GRCH38
+python gene_annotation2bed.py \
+-gff ./tests/test_data/GCF_000001405.40_GRCh38.p14_genomic.gff -ann data/mixed_dataset.tsv -build hg38 -f 5 \ 
+--assembly_report tests/test_data/GCF_000001405.40_GRCh38.p14_assembly_report.txt -o "test_GRCh38"
 """
 
 import argparse
@@ -435,6 +440,7 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
     gff_df["transcript_id"] = gff_df["transcript_id"].str.split(".").str[0]
     merged_hgnc_df = gff_df.merge(hgnc_df, on="hgnc_id", how="inner")
     # check for loss of hgnc ids
+    lost_hgnc_ids = None
     if len(merged_hgnc_df["hgnc_id"].unique()) != len(hgnc_df["hgnc_id"].unique()):
         lost_hgnc_ids = set(hgnc_df["hgnc_id"].unique(
         )) - set(merged_hgnc_df["hgnc_id"].unique())
@@ -455,11 +461,21 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
     final_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
     coordinates_df = convert_coordinates(coordinates_df)
 
-    lost_ids = lost_hgnc_ids.union(lost_transcript_ids)
-    print(
-        f"IDs removed during merge: {lost_ids}.\n",
-        "These won't be present in the final bed file."
-    )
+    # Logic for printing out lost ids if present.
+    if lost_hgnc_ids & lost_transcript_ids:
+        lost_ids = lost_hgnc_ids.union(lost_transcript_ids)
+    elif lost_hgnc_ids:
+        lost_ids = lost_hgnc_ids
+    elif lost_transcript_ids:
+        lost_ids = lost_transcript_ids
+    else:
+        lost_ids = None
+    if lost_ids:
+        print(
+            f"IDs removed during merge: {lost_ids}.\n",
+            "These won't be present in the final bed file."
+        )
+
     return final_merged_df, coordinates_df
 
 
@@ -504,7 +520,7 @@ def extract_hgnc_id(dbxref_str: str):
         raise ValueError(f"Error: {e}") from e
 
 
-def read_assembly_mapping(assembly_file: str):
+def read_assembly_mapping(assembly_file: str, build: str):
     """
     Reads in the associated assembly file and returns a dictionary mapping
     to find chromosome for each refseq accession.
@@ -525,8 +541,43 @@ def read_assembly_mapping(assembly_file: str):
     assembly_df = assembly_df.dropna()  # Drop rows with missing values
     # filter out na from chromosome column and turn accession and chromosome columns to dict
     assembly_df = assembly_df[~assembly_df[2].str.startswith("na")]
-    accession_to_chromosome = dict(zip(assembly_df[6], assembly_df[2]))
-
+    if build == "GRCh37":
+        accession_to_chromosome = dict(zip(assembly_df[6], assembly_df[2])) # dict(zip(assembly_df[5], assembly_df[1]))
+        print(accession_to_chromosome)
+        print("alt dict")
+        print(dict(zip(assembly_df[5], assembly_df[1])))
+    elif build == "GRCh38":
+        accession_to_chromosome = dict(zip(assembly_df[5], assembly_df[1]))
+        print(accession_to_chromosome)
+    elif build == "hg19":
+        accession_to_chromosome = {
+            "NC_000001.10": "1", "NC_000002.11": "2", "NC_000003.11": "3",
+            "NC_000004.11":	"4", "NC_000005.9": "5", "NC_000006.11": "6",
+            "NC_000007.13": "7", "NC_000008.10": "8", "NC_000009.11": "9",
+            "NC_000010.10": "10", "NC_000011.9": "11", "NC_000012.11": "12",
+            "NC_000013.10": "13", "NC_000014.8": "14", "NC_000015.9": "15",
+            "NC_000016.9": "16", "NC_000017.10": "17", "NC_000018.9": "18",
+            "NC_000019.9": "19", "NC_000020.10": "20", "NC_000021.8": "21",
+            "NC_000022.10": "22", "NC_000023.10": "X", "NC_000024.9": "Y"
+        }
+        print(accession_to_chromosome)
+    elif build == "hg38":
+        accession_to_chromosome = {
+            "NC_000001.11": "1", "NC_000002.12": "2", "NC_000003.12": "3",
+            "NC_000004.12":	"4", "NC_000005.10": "5", "NC_000006.12": "6",
+            "NC_000007.14": "7", "NC_000008.11": "8", "NC_000009.12": "9",
+            "NC_000010.11": "10", "NC_000011.10": "11", "NC_000012.12": "12",
+            "NC_000013.11": "13", "NC_000014.9": "14", "NC_000015.10": "15",
+            "NC_000016.10": "16", "NC_000017.11": "17", "NC_000018.10": "18",
+            "NC_000019.10": "19", "NC_000020.11": "20", "NC_000021.9": "21",
+            "NC_000022.11": "22", "NC_000023.11": "X", "NC_000024.10": "Y"
+        }
+        print(accession_to_chromosome)
+    else:
+        print("""Invalid build - Genome build not given as '37' or '38'. Unable to map RefSeq
+            chromosome numbers (e.g. NC_000001.10) to simple chromosome numbers
+            (e.g. 1)""")
+        raise ValueError("Invalid build")
     return accession_to_chromosome
 
 
@@ -674,6 +725,25 @@ def config_igv_report(args: argparse.Namespace):
     print("IGV report created successfully!")
 
 
+def addition_and_replace(position, flanking_int):
+    """
+    Define a function to apply the addition and replace with 1 if negative
+
+    Parameters
+    ----------
+    position : int
+        position to add to.
+    flanking_int : int
+        integer value to add to each value in the list.
+
+    Returns
+    -------
+    result : list
+        list of values with flanking added.
+    """
+    return int(position + flanking_int)
+
+
 def subtract_and_replace(position, flanking_int):
     """
     Define a function to apply the subtraction and replace with 0 if negative
@@ -690,7 +760,7 @@ def subtract_and_replace(position, flanking_int):
     result : list
         list of values with flanking subtracted, minimum value = 0.
     """
-    return int(max(1, position - flanking_int))
+    return int(max(0, position - flanking_int))
 
 
 def write_bed(annotation_df: pd.DataFrame,
@@ -738,12 +808,14 @@ def write_bed(annotation_df: pd.DataFrame,
         )
     # Create BED file with flanking regions
     print("Creating BED file")
+    # Convert the annotation_df to 0-based
+    annotation_df["start"] = annotation_df["start"] - 1
     # Apply the function to the specified column
     annotation_df["start_flank"] = annotation_df["start"].apply(
         subtract_and_replace, flanking_int=args.flanking
     )
     annotation_df["end_flank"] = annotation_df["end"].apply(
-        subtract_and_replace, flanking_int=args.flanking
+        addition_and_replace, flanking_int=args.flanking
     )
 
     bed_columns = [
@@ -757,7 +829,7 @@ def write_bed(annotation_df: pd.DataFrame,
     bed_df = annotation_df[bed_columns]
     bed_df = bed_df.reindex()
     # Extract chromosome from seqid and create the 'chromosome' column
-    accession_to_chromosome = read_assembly_mapping(args.assembly_report)
+    accession_to_chromosome = read_assembly_mapping(args.assembly_report, args.genome_build)
     # Add a new column 'chromosome' by mapping accession to chromosome identifier
     bed_df.loc[:, "chromosome"] = bed_df["seq_id"].apply(
         lambda x: map_accession_to_chromosome(x, accession_to_chromosome)
@@ -814,6 +886,19 @@ def main():
     Creates an IGV report.
     """
     args = parse_args()
+    # Check if gff and assembly match
+    if args.gff_file:
+        gff_file = args.gff_file
+        assembly_file = args.assembly_report
+        refseq_version_gff_list = gff_file.split("/")[-1].split("_")
+        refseq_version_gff = ''.join(refseq_version_gff_list[0:2])
+        print(f"Refseq version from GFF: {refseq_version_gff}")
+        refseq_version_assembly_list = assembly_file.split("/")[-1].split("_")
+        refseq_version_assembly = ''.join(refseq_version_assembly_list[0:2])
+        print(f"Refseq version from assembly: {refseq_version_assembly}")
+        if refseq_version_gff != refseq_version_assembly:
+            raise ValueError(
+                "The assembly file does not match the GFF assembly.")
 
     # read in pickle file if provided
     if args.pickle:
@@ -822,6 +907,7 @@ def main():
     else:
         # Parse gff file
         gff_transcripts_df = parse_gff(args.gff_file)
+        gff_transcripts_df.to_pickle(f"{args.output_file_suffix}_gff.pkl")
 
     # Read the annotation file into a pandas DataFrame
     hgnc_df, transcript_df, coordinates_df = parse_annotation_tsv(
