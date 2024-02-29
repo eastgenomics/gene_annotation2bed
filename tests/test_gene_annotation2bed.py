@@ -449,7 +449,6 @@ class TestWriteBed(unittest.TestCase):
     """
 
     def setUp(self) -> None:
-        self.assembly_file = "tests/test_data/GCF_000001405.25_GRCh37.p13_assembly_report.txt"
         self.annotation_df = pd.read_csv(
             f"{TEST_DATA_DIR}/example_final_merged_df.csv")
         self.coordinates_df = pd.read_csv(
@@ -463,7 +462,6 @@ class TestWriteBed(unittest.TestCase):
         """
         args = argparse.Namespace(
             flanking=10,
-            assembly_report=self.assembly_file,
             genome_build="hg38",
             output_file_suffix="test"
         )
@@ -502,7 +500,6 @@ class TestWriteBed(unittest.TestCase):
         """
         args = argparse.Namespace(
             flanking=10,
-            assembly_report=self.assembly_file,
             genome_build="hg38",
             output_file_suffix="test"
         )
@@ -540,7 +537,6 @@ class TestWriteBed(unittest.TestCase):
         # Create argparse.Namespace object with required arguments
         args = argparse.Namespace(
             flanking=100,
-            assembly_report='tests/test_data/GCF_000001405.25_GRCh37.p13_assembly_report.txt',
             genome_build='hg38',
             output_file_suffix='test'
         )

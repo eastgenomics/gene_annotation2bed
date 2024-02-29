@@ -87,13 +87,6 @@ def parse_args() -> argparse.Namespace:
         required=False,
         default=0
     )
-    parser.add_argument(
-        "-ar",
-        "--assembly_report",
-        help="Path to assembly report file, containing information"
-             " on refseq accession to chromosome mapping.",
-        required=True
-    )
 
     # parser.add_argument('--report_name', help="Name for report")
     argcomplete.autocomplete(parser)
@@ -520,37 +513,25 @@ def extract_hgnc_id(dbxref_str: str):
         raise ValueError(f"Error: {e}") from e
 
 
-def read_assembly_mapping(assembly_file: str, build: str):
+def assembly_mapping(build: str):
     """
-    Reads in the associated assembly file and returns a dictionary mapping
-    to find chromosome for each refseq accession.
+    Provided a dictionary mapping to find chromosome for each refseq accession.
+    Mapping can be found at:
+    https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.25_GRCh37.p13/
+    Mapping was taken from gff2tsv.py,
+    https://github.com/eastgenomics/exon_file_and_g2t_from_new_refseq_gff/blob/main/gff2tsv.py
 
     Parameters
     ----------
-    assembly_file : str (file path to tsv)
-        found at: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.25_GRCh37.p13/
-
+    build : str (hg19/hg38)
+        build of the genome
     Returns
     -------
     dictionary
         mapping of refseq accession to chromosome
     """
     accession_to_chromosome = {}
-    assembly_df = pd.read_csv(assembly_file, sep="\t",
-                              comment="#", header=None)
-    assembly_df = assembly_df.dropna()  # Drop rows with missing values
-    # filter out na from chromosome column and turn accession and chromosome columns to dict
-    assembly_df = assembly_df[~assembly_df[2].str.startswith("na")]
-    if build == "GRCh37":
-        # dict(zip(assembly_df[5], assembly_df[1]))
-        accession_to_chromosome = dict(zip(assembly_df[6], assembly_df[2]))
-        print(accession_to_chromosome)
-        print("alt dict")
-        print(dict(zip(assembly_df[5], assembly_df[1])))
-    elif build == "GRCh38":
-        accession_to_chromosome = dict(zip(assembly_df[5], assembly_df[1]))
-        print(accession_to_chromosome)
-    elif build == "hg19":
+    if build == "hg19":
         accession_to_chromosome = {
             "NC_000001.10": "1", "NC_000002.11": "2", "NC_000003.11": "3",
             "NC_000004.11":	"4", "NC_000005.9": "5", "NC_000006.11": "6",
@@ -561,7 +542,6 @@ def read_assembly_mapping(assembly_file: str, build: str):
             "NC_000019.9": "19", "NC_000020.10": "20", "NC_000021.8": "21",
             "NC_000022.10": "22", "NC_000023.10": "X", "NC_000024.9": "Y"
         }
-        print(accession_to_chromosome)
     elif build == "hg38":
         accession_to_chromosome = {
             "NC_000001.11": "1", "NC_000002.12": "2", "NC_000003.12": "3",
@@ -573,7 +553,6 @@ def read_assembly_mapping(assembly_file: str, build: str):
             "NC_000019.10": "19", "NC_000020.11": "20", "NC_000021.9": "21",
             "NC_000022.11": "22", "NC_000023.11": "X", "NC_000024.10": "Y"
         }
-        print(accession_to_chromosome)
     else:
         print("""Invalid build - Genome build not given as '37' or '38'. Unable to map RefSeq
             chromosome numbers (e.g. NC_000001.10) to simple chromosome numbers
@@ -831,8 +810,7 @@ def write_bed(annotation_df: pd.DataFrame,
     bed_df = annotation_df[bed_columns]
     bed_df = bed_df.reindex()
     # Extract chromosome from seqid and create the 'chromosome' column
-    accession_to_chromosome = read_assembly_mapping(
-        args.assembly_report, args.genome_build)
+    accession_to_chromosome = assembly_mapping(args.genome_build)
     # Add a new column 'chromosome' by mapping accession to chromosome identifier
     bed_df.loc[:, "chromosome"] = bed_df["seq_id"].apply(
         lambda x: map_accession_to_chromosome(x, accession_to_chromosome)
@@ -889,19 +867,6 @@ def main():
     Creates an IGV report.
     """
     args = parse_args()
-    # Check if gff and assembly match
-    if args.gff_file:
-        gff_file = args.gff_file
-        assembly_file = args.assembly_report
-        refseq_version_gff_list = gff_file.split("/")[-1].split("_")
-        refseq_version_gff = ''.join(refseq_version_gff_list[0:2])
-        print(f"Refseq version from GFF: {refseq_version_gff}")
-        refseq_version_assembly_list = assembly_file.split("/")[-1].split("_")
-        refseq_version_assembly = ''.join(refseq_version_assembly_list[0:2])
-        print(f"Refseq version from assembly: {refseq_version_assembly}")
-        if refseq_version_gff != refseq_version_assembly:
-            raise ValueError(
-                "The assembly file does not match the GFF assembly.")
 
     # read in pickle file if provided
     if args.pickle:
