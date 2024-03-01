@@ -180,6 +180,7 @@ class TestConvertCoordinates(unittest.TestCase):
         }
         input_df = pd.DataFrame(input_data)
         result_df = bed.convert_coordinates(input_df)
+        print(result_df)
         expected_data = {
             "chromosome": ["1", "2"],
             "start": [11874, 20000],

@@ -191,7 +191,6 @@ def parse_gff(gff_file):
         "satellite", "splices", "standard_name", "start_range", "tag",
         "tissue-type", "transl_except", "transl_table", "weighted_identity",
     ]
-    print(gff_df.columns)
     # create a filter to drop columns
     drop_filter = gff_df.filter(columns_to_drop)
 
@@ -287,13 +286,12 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
             columns=["chromosome", "start", "end", "annotation", "gene"])
         print("No Coordinates found in the annotation file.")
         return empty_df
-    print(coordinates_df.columns)
-    print(coordinates_df.head())
+
     # Create empty columns
     coordinates_df['chromosome'] = pd.Series(dtype='str')
     coordinates_df['start'] = pd.Series(dtype='Int64')
     coordinates_df['end'] = pd.Series(dtype='Int64')
-    coordinates_df['gene'] = pd.Series(dtype='str')
+    coordinates_df['gene'] = ""
     try:
         # Split the "Coordinates" column by ':' and '-'
         coordinates_df[["chromosome", "start", "end"]] = coordinates_df[
