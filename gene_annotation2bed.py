@@ -26,8 +26,7 @@ gene_annotation2bed.py \
 
 GRCH38
 python gene_annotation2bed.py \
--gff ./tests/test_data/GCF_000001405.40_GRCh38.p14_genomic.gff -ann data/mixed_dataset.tsv -build hg38 -f 5 \ 
---assembly_report tests/test_data/GCF_000001405.40_GRCh38.p14_assembly_report.txt -o "test_GRCh38"
+-gff ./tests/test_data/GCF_000001405.40_GRCh38.p14_genomic.gff -ann data/mixed_dataset.tsv -build hg38 -f 5 -o "test_GRCh38"
 """
 
 import argparse
@@ -192,13 +191,16 @@ def parse_gff(gff_file):
         "satellite", "splices", "standard_name", "start_range", "tag",
         "tissue-type", "transl_except", "transl_table", "weighted_identity",
     ]
+    print(gff_df.columns)
     # create a filter to drop columns
     drop_filter = gff_df.filter(columns_to_drop)
+
     # drop columns that are not needed to reduce memory footprint
     gff_df.drop(drop_filter, inplace=True, axis=1)
 
     # Apply extract_hgnc_id function to create 'hgnc_id' column
     gff_df["hgnc_id"] = gff_df["Dbxref"].apply(extract_hgnc_id)
+    gff_df = gff_df.dropna(subset=['hgnc_id'])
 
     # set dtype for each column to reduce memory footprint
     dtype_mapping = {
@@ -212,6 +214,7 @@ def parse_gff(gff_file):
     # print(gff_df[gff_df["source"] == "RefSeq"])
     # print(gff_df[gff_df["source"] == "BestRefSeq"])
     # print(gff_df[gff_df["source"] != "BestRefSeq"])
+
     gff_df = gff_df.astype(dtype_mapping)
     # Filter GFF DataFrame to select entries with 'NM' type
     transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
@@ -284,10 +287,13 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
             columns=["chromosome", "start", "end", "annotation", "gene"])
         print("No Coordinates found in the annotation file.")
         return empty_df
-
-    # create columns
-    coordinates_df[["chr", "start", "end", "gene"]] = ""
-
+    print(coordinates_df.columns)
+    print(coordinates_df.head())
+    # Create empty columns
+    coordinates_df['chromosome'] = pd.Series(dtype='str')
+    coordinates_df['start'] = pd.Series(dtype='Int64')
+    coordinates_df['end'] = pd.Series(dtype='Int64')
+    coordinates_df['gene'] = pd.Series(dtype='str')
     try:
         # Split the "Coordinates" column by ':' and '-'
         coordinates_df[["chromosome", "start", "end"]] = coordinates_df[
@@ -347,7 +353,7 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
     """
     try:
         df = pd.read_csv(path, sep="\t", dtype={
-                         'ID': 'string', 'annotation': 'string'})
+                         'ID': 'str', 'annotation': 'str'})
     except Exception as err:
         print(err)
         print("Please check the format of the annotation file.")
