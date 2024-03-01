@@ -29,12 +29,12 @@ python gene_annotation2bed.py \
 -gff ./tests/test_data/GCF_000001405.40_GRCh38.p14_genomic.gff -ann data/mixed_dataset.tsv -build hg38 -f 5 -o "test_GRCh38"
 """
 
-import argparse
-
-import argcomplete
 import numpy as np
 import pandas as pd
 import re
+
+import argparse
+import argcomplete
 
 from utils import gff2pandas as gffpd
 from scripts import igv_report as igv
@@ -246,7 +246,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
     ----------
     coordinates_df : pd.DataFrame (0-based)
         coordinate format provided by the annotation file.
-        ID                  annotation
+        Coordinates                  annotation
         chr1:11874-14409    promoter_of_interest
 
     Returns
@@ -256,7 +256,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
             end, annotation, gene.
 
         +------------------+----------------------+
-        |        ID        |      annotation      |
+        |   Coordinates    |      annotation      |
         +------------------+----------------------+
         | chr1:11874-14409 | promoter_of_interest |
         +------------------+----------------------+
@@ -472,7 +472,8 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
     if lost_ids:
         print(
             f"IDs removed during merge: {lost_ids}.\n",
-            "These won't be present in the final bed file."
+            "These won't be present in the final bed file.",
+            "This may be due to no refseq transcript present for this HGNC ID."
         )
 
     return final_merged_df, coordinates_df

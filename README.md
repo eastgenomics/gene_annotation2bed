@@ -73,14 +73,20 @@ python gene_annotation2bed.py -ann annotation.tsv -o output_suffix -ref hg38 -f 
 
 ## Requirements
 
+To generate IGV reports:
+HTSlib is required for generating IGV report with the bed file to check the accuracy.
+This uses tabix and bgzip. Version: 1.19.1.
+
+General requirements see requirements.txt for more info on versions.
+
 - pysam
-- pandas
-- igv-reports (v)
 - numpy
-- re
+- pandas
+- igv-reports (v1.12.0)
+- re (std lib)
 
 install using `requirements.txt`. `pip install requirements.txt`
-
+Alternatively you can use conda and the yml provided.
 ---
 
 ## How does this app work?
