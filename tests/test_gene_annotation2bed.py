@@ -277,8 +277,6 @@ class TestParseAnnotationTsv(unittest.TestCase):
         """
         Set up the test data. Load the preprocessed gff file.
         If not present then exit.
-        # TODO: Add a test for the parsing of the gff file.
-        # run script to produce gff if not present?
         """
         try:
             self.gff_transcripts_df = bed.parse_pickle(
@@ -340,8 +338,6 @@ class TestMerge_Dataframes(unittest.TestCase):
         """
         Set up the test data. Load the preprocessed gff file.
         If not present then exit.
-        # TODO: Add a test for the parsing of the gff file.
-        # run script to produce pkl file for gff if not present.
         """
         try:
             self.gff_transcripts_df = bed.parse_pickle(
@@ -463,7 +459,7 @@ class TestWriteBed(unittest.TestCase):
         """
         args = argparse.Namespace(
             flanking=10,
-            genome_build="hg38",
+            genome_build="hg19",
             output_file_suffix="test"
         )
 
@@ -471,12 +467,12 @@ class TestWriteBed(unittest.TestCase):
         bed.write_bed(self.annotation_df, self.coordinates_df, args)
 
         # Check if the output files are created
-        assert os.path.exists("output_hg38_test.bed")
-        assert os.path.exists("output_hg38_test.maf")
+        assert os.path.exists("output_hg19_test.bed")
+        assert os.path.exists("output_hg19_test.maf")
 
         # Clean up - delete the generated files
-        os.remove("output_hg38_test.bed")
-        os.remove("output_hg38_test.maf")
+        os.remove("output_hg19_test.bed")
+        os.remove("output_hg19_test.maf")
 
     def test_write_bed_edge_cases(self):
         """
@@ -501,7 +497,7 @@ class TestWriteBed(unittest.TestCase):
         """
         args = argparse.Namespace(
             flanking=10,
-            genome_build="hg38",
+            genome_build="hg19",
             output_file_suffix="test"
         )
 
@@ -509,12 +505,12 @@ class TestWriteBed(unittest.TestCase):
         bed.write_bed(self.annotation_df, self.coordinates_df, args)
 
         # Check if the output files are created
-        assert os.path.exists("output_hg38_test.bed")
-        assert os.path.exists("output_hg38_test.maf")
+        assert os.path.exists("output_hg19_test.bed")
+        assert os.path.exists("output_hg19_test.maf")
 
         # Clean up - delete the generated files
-        os.remove("output_hg38_test.bed")
-        os.remove("output_hg38_test.maf")
+        os.remove("output_hg19_test.bed")
+        os.remove("output_hg19_test.maf")
 
     @pytest.fixture(autouse=True)
     def capsys(self, capsys):
@@ -538,7 +534,7 @@ class TestWriteBed(unittest.TestCase):
         # Create argparse.Namespace object with required arguments
         args = argparse.Namespace(
             flanking=100,
-            genome_build='hg38',
+            genome_build='hg19',
             output_file_suffix='test'
         )
 

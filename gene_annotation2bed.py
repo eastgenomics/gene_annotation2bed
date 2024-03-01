@@ -562,7 +562,7 @@ def assembly_mapping(build: str):
         print("""Invalid build - Genome build not given as '37' or '38'. Unable to map RefSeq
             chromosome numbers (e.g. NC_000001.10) to simple chromosome numbers
             (e.g. 1)""")
-        raise ValueError("Invalid build")
+        raise RuntimeError("Invalid build")
     return accession_to_chromosome
 
 
