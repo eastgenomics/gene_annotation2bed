@@ -693,18 +693,17 @@ def config_igv_report(args: argparse.Namespace):
     bed_file = f"output_{args.genome_build}_{args.output_file_suffix}.bed"
     genome = args.genome_build
     fasta_ref = args.reference_file_for_igv
-    info_columns = []
     title = f"{args.output_file_suffix}_report"
     output_file = f"{title}.html"
     print("Creating IGV report...")
 
     print(
         f"Bed file: {bed_file}\nGenome: {genome}\n"
-        f"Info columns: {info_columns}\nTitle: {title}\nOutput: {output_file}"
+        f"Title: {title}\nOutput: {output_file}"
     )
 
     igv.create_igv_report(
-        bed_file, maf_file, genome, fasta_ref, info_columns, title, output_file
+        bed_file, maf_file, genome, fasta_ref, title, output_file
     )
 
     print("IGV report created successfully!")
