@@ -192,18 +192,18 @@ def parse_gff(gff_file):
     # set dtype for each column to reduce memory footprint
     dtype_mapping = {
         "ID": "category",
-        "transcript_id": "str",
+        "transcript_id": "category",
         "hgnc_id": "Int64",
     }
-    # GFF what to filter on. Select mRNA? or starts with NM_?
-    # print(gff_df.head())
-    # print(gff_df[gff_df["transcript_id"].str.startswith("NR_")])
-    # print(gff_df[gff_df["source"] == "RefSeq"])
-    # print(gff_df[gff_df["source"] == "BestRefSeq"])
-    # print(gff_df[gff_df["source"] != "BestRefSeq"])
 
     gff_df = gff_df.astype(dtype_mapping)
     # Filter GFF DataFrame to select entries with 'NM' type
+    print("Filtering GFF DataFrame to select entries with 'NM' type")
+    print(gff_df.head())
+    # print only include entries with 'NM' prefix
+    print(gff_df["transcript_id"].str.startswith("NM_"))
+    # remove null values from the transcript_id column
+    gff_df = gff_df.dropna(subset=["transcript_id"])
     transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
     return transcripts_df
 
@@ -297,7 +297,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
 
     try:
         coordinates_df["chromosome"] = coordinates_df["chromosome"].astype(
-            'str')
+            'category')
         coordinates_df["start"] = coordinates_df["start"].astype('Int64')
         coordinates_df["end"] = coordinates_df["end"].astype('Int64')
         coordinates_df["annotation"] = coordinates_df["annotation"].astype(
@@ -369,7 +369,7 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
 
     dtype_mapping_hgnc = {"ID": "Int64", "annotation": "category"}
     dtype_mapping_transcript = {"ID": "str", "annotation": "category"}
-    dtype_mapping_gff = {"hgnc_id": "Int64"}
+    dtype_mapping_gff = {"hgnc_id": np.int16}
 
     hgnc_df = hgnc_df.astype(dtype_mapping_hgnc)
     transcript_df = transcript_df.astype(dtype_mapping_transcript)
@@ -443,6 +443,16 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
         print(
             f"Lost Transcript IDs in merge: {[id for id in lost_transcript_ids]}")
 
+    #If there are any lost ids, raise an error.
+    if lost_hgnc_ids or lost_transcript_ids:
+        raise RuntimeError(
+            "IDs removed during merge.\n"
+            f"Are these HGNC ids: {', '.join(str(item) for item in lost_hgnc_ids)}"
+            f" and transcript ids: {'None' if not lost_transcript_ids else ', '.join(str(item) for item in lost_transcript_ids)}.\n"
+            "Please check the annotation file. Remove ids to continue."
+            )
+
+    # Merge the two dataframes
     final_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
     coordinates_df = convert_coordinates(coordinates_df)
 
@@ -699,7 +709,7 @@ def config_igv_report(args: argparse.Namespace):
 
 def addition_and_replace(position, flanking_int):
     """
-    Define a function to apply the addition and replace with 1 if negative
+    Define a function to apply the additional flanking to the end coord.
 
     Parameters
     ----------
@@ -710,8 +720,8 @@ def addition_and_replace(position, flanking_int):
 
     Returns
     -------
-    result : list
-        list of values with flanking added.
+    result : int
+        int with flanking added.
     """
     return int(position + flanking_int)
 
@@ -729,8 +739,8 @@ def subtract_and_replace(position, flanking_int):
 
     Returns
     -------
-    result : list
-        list of values with flanking subtracted, minimum value = 0.
+    result : int
+        int with flanking subtracted, minimum value = 0.
     """
     return int(max(0, position - flanking_int))
 
@@ -811,12 +821,12 @@ def write_bed(annotation_df: pd.DataFrame,
     # Merge the coordinates DataFrame with the BED DataFrame
     # Set dtypes for the first DataFrame
     bed_df = bed_df.astype({
-        "seq_id": "str",
-        "start_flank": "Int64",
-        "end_flank": "Int64",
-        "hgnc_id": "Int64",
-        "annotation": "str",
-        "gene": "str"
+        "seq_id": "category",
+        "start_flank": np.uint32,
+        "end_flank": np.uint32,
+        "hgnc_id": np.int16,
+        "annotation": "category",
+        "gene": "category"
     })
     coordinates_df = coordinates_df.rename(columns={
         "start": "start_flank",
@@ -824,11 +834,11 @@ def write_bed(annotation_df: pd.DataFrame,
     })
     # Set dtypes for the second DataFrame
     coordinates_df = coordinates_df.astype({
-        "chromosome": "str",
-        "start_flank": "Int64",
-        "end_flank": "Int64",
-        "annotation": "str",
-        "gene": "str"
+        "chromosome": "category",
+        "start_flank": np.uint32,
+        "end_flank": np.uint32,
+        "annotation": "category",
+        "gene": "category"
     })
 
     # Merge the two DataFrames
