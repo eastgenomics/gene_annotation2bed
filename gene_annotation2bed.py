@@ -1,32 +1,20 @@
 """
 This script takes a GFF3 file and an annotation file,
 producing a BED file for annotation of relevant transcripts.
-Example cmd (TODO: add example cmd once script is finalized):
-
 
 Current working cmd:
-
-gene_annotation2bed.py \
--pkl ./tests/test_data/refseq_gff_preprocessed.pkl \
--ann data/mixed_dataset.tsv \
--ref_igv ./tests/test_data/hs37d5.fa -build hg19 -f 5 \
---assembly_report data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
--o "test_X"
-
-or
-
-gene_annotation2bed.py \
+GRCH37
+python gene_annotation2bed.py \
 -gff data/GCF_000001405.25_GRCh37.p13_genomic.gff \
 -ann data/mixed_dataset.tsv \
 -ref_igv ./tests/test_data/hs37d5.fa \
 -build hg19 -f 5 \
---assembly_report data/GCF_000001405.25_GRCh37.p13_assembly_report.txt \
 -o "testing"
-
 
 GRCH38
 python gene_annotation2bed.py \
--gff ./tests/test_data/GCF_000001405.40_GRCh38.p14_genomic.gff -ann data/mixed_dataset.tsv -build hg38 -f 5 -o "test_GRCh38"
+-gff ./tests/test_data/GCF_000001405.40_GRCh38.p14_genomic.gff \
+-ann data/mixed_dataset.tsv -build hg38 -f 5 -o "test_GRCh38"
 """
 
 import numpy as np
