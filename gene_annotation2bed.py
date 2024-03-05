@@ -194,7 +194,7 @@ def parse_gff(gff_file):
         "ID": "category",
         "transcript_id": "category",
         "hgnc_id": np.uint16
-        }
+    }
 
     gff_df = gff_df.astype(dtype_mapping)
     # Filter GFF DataFrame to select entries with 'NM' type
@@ -296,12 +296,12 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
     try:
         coordinates_df["chromosome"] = coordinates_df["chromosome"].astype(
             'category'
-            )
+        )
         coordinates_df["start"] = coordinates_df["start"].astype(np.uint32)
         coordinates_df["end"] = coordinates_df["end"].astype(np.uint32)
         coordinates_df["annotation"] = coordinates_df["annotation"].astype(
             'category'
-            )
+        )
         coordinates_df["gene"] = coordinates_df["gene"].astype('category')
     except ValueError as e:
         raise ValueError(
@@ -444,14 +444,14 @@ def merge_dataframes(hgnc_df: pd.DataFrame, transcript_df: pd.DataFrame,
         print(
             f"Lost Transcript IDs in merge: {[id for id in lost_transcript_ids]}")
 
-    #If there are any lost ids, raise an error.
+    # If there are any lost ids, raise an error.
     if lost_hgnc_ids or lost_transcript_ids:
         raise RuntimeError(
             "IDs removed during merge.\n"
             f"Are these HGNC ids: {', '.join(str(item) for item in lost_hgnc_ids)}"
             f" and transcript ids: {'None' if not lost_transcript_ids else ', '.join(str(item) for item in lost_transcript_ids)}.\n"
             "Please check the annotation file. Remove ids to continue."
-            )
+        )
 
     # Merge the two dataframes
     final_merged_df = pd.concat([merged_hgnc_df, merged_transcript_df])
