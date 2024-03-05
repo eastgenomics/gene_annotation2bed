@@ -199,8 +199,6 @@ def parse_gff(gff_file):
     gff_df = gff_df.astype(dtype_mapping)
     # Filter GFF DataFrame to select entries with 'NM' type
     print("Filtering GFF DataFrame to select entries with 'NM' type")
-    print(gff_df.head())
-    print(gff_df.dtypes)
 
     # remove null values from the transcript_id column
     gff_df = gff_df.dropna(subset=["transcript_id"])

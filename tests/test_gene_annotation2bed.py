@@ -72,7 +72,6 @@ class TestParseGFF(unittest.TestCase):
                            'hgnc_id': 'Int32'}
 
         for col, dtype in expected_dtypes.items():
-            print(col, dtype, self.test_df[col].dtype.name)
             self.assertEqual(self.test_df[col].dtype.name, dtype)
 
     def test_parse_gff_extract_hgnc_id(self):
