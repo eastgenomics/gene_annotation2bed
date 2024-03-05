@@ -14,6 +14,7 @@ import sys
 
 import argparse
 import unittest
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -47,7 +48,7 @@ class TestParseGFF(unittest.TestCase):
         expected_columns = ['seq_id', 'source', 'type', 'start',
                             'end', 'score', 'strand', 'phase',
                             'attributes', 'Dbxref', 'ID',
-                            'gbkey', 'gene', 'transcript_id', 'hgnc_id']
+                            'gene', 'transcript_id', 'hgnc_id']
         self.assertListEqual(list(self.test_df.columns), expected_columns)
 
     def test_parse_gff_startswith_NM(self):
@@ -62,15 +63,13 @@ class TestParseGFF(unittest.TestCase):
 
     def test_parse_gff_dtypes(self):
         # Test if the data types are set as expected
-        expected_dtypes = {'seq_id': 'object', 'source': 'category',
+        expected_dtypes = {'seq_id': 'category', 'source': 'category',
                            'type': 'category', 'start': 'uint32',
-                           'end': 'uint32', 'score': 'object',
-                           'strand': 'object', 'phase': 'object',
-                           'attributes': 'object',
-                           'Dbxref': 'object', 'ID': 'category',
-                           'gbkey': 'object', 'gene': 'object',
-                           'transcript_id': 'object',
-                           'hgnc_id': 'Int64'}
+                           'end': 'uint32', 'score': 'category',
+                           'strand': 'category', 'phase': 'category',
+                           'attributes': 'string',
+                           'Dbxref': 'object', 'transcript_id': 'category',
+                           'hgnc_id': 'uint16'}
 
         for col, dtype in expected_dtypes.items():
             self.assertEqual(self.test_df[col].dtype.name, dtype)
@@ -180,15 +179,20 @@ class TestConvertCoordinates(unittest.TestCase):
         }
         input_df = pd.DataFrame(input_data)
         result_df = bed.convert_coordinates(input_df)
+
         expected_data = {
             "chromosome": ["1", "2"],
             "start": [11874, 20000],
             "end": [14409, 25000],
             "annotation": ["promoter_of_interest", "enhancer"],
-            "gene": ["", ""]
+            "gene": [None, None]
         }
         expected_df = pd.DataFrame(expected_data)
-        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+        expected_df = expected_df.astype({'chromosome': 'category',
+                                          'start': np.uint32,
+                                          'end': np.uint32,
+                                          'annotation': 'category',
+                                          'gene': 'category'})
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_convert_coordinates_empty(self):
@@ -215,10 +219,14 @@ class TestConvertCoordinates(unittest.TestCase):
             "start": [11874, 20000],
             "end": [14409, 25000],
             "annotation": ["promoter_of_interest", "enhancer"],
-            "gene": ["", ""]
+            "gene": [None, None]
         }
         expected_df = pd.DataFrame(expected_data)
-        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+        expected_df = expected_df.astype({'chromosome': 'category',
+                                          'start': np.uint32,
+                                          'end': np.uint32,
+                                          'annotation': 'category',
+                                          'gene': 'category'})
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -237,10 +245,14 @@ class TestConvertCoordinates(unittest.TestCase):
             "start": [11874, 20000],
             "end": [14409, 25000],
             "annotation": ["promoter_of_interest", "enhancer"],
-            "gene": ["", ""]
+            "gene": [None, None]
         }
         expected_df = pd.DataFrame(expected_data)
-        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+        expected_df = expected_df.astype({'chromosome': 'category',
+                                          'start': np.uint32,
+                                          'end': np.uint32,
+                                          'annotation': 'category',
+                                          'gene': 'category'})
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -259,10 +271,14 @@ class TestConvertCoordinates(unittest.TestCase):
             "start": [999999999],
             "end": [1000000000],
             "annotation": ["large_region"],
-            "gene": [""]
+            "gene": [None]
         }
         expected_df = pd.DataFrame(expected_data)
-        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+        expected_df = expected_df.astype({'chromosome': 'category',
+                                          'start': np.uint32,
+                                          'end': np.uint32,
+                                          'annotation': 'category',
+                                          'gene': 'category'})
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -276,8 +292,6 @@ class TestParseAnnotationTsv(unittest.TestCase):
         """
         Set up the test data. Load the preprocessed gff file.
         If not present then exit.
-        # TODO: Add a test for the parsing of the gff file.
-        # run script to produce gff if not present?
         """
         try:
             self.gff_transcripts_df = bed.parse_pickle(
@@ -339,8 +353,6 @@ class TestMerge_Dataframes(unittest.TestCase):
         """
         Set up the test data. Load the preprocessed gff file.
         If not present then exit.
-        # TODO: Add a test for the parsing of the gff file.
-        # run script to produce pkl file for gff if not present.
         """
         try:
             self.gff_transcripts_df = bed.parse_pickle(
@@ -425,12 +437,13 @@ class TestMerge_Dataframes(unittest.TestCase):
             'start': [5000000, 5000, 5000, 1, 1],
             'end': [248956422, 10000, 10000, 100000, 100000],
             'annotation': ['Non-Oncogene', 'Oncogene', 'Oncogene', 'Non-Oncogene', 'Oncogene'],
-            'gene': ['', '', '', '', '']
+            'gene': [None, None, None, None, None]
         }
         expected_df = pd.DataFrame(expected_data)
         expected_df = expected_df.astype({
-            'start': "Int64", 'end': "Int64",
-            'chromosome': "str", 'annotation': "str"
+            'start': np.uint32, 'end': np.uint32,
+            'chromosome': "category", 'annotation': "category",
+            'gene': "category"
         })
 
         pd.testing.assert_frame_equal(coordinates_df, expected_df)
@@ -449,7 +462,6 @@ class TestWriteBed(unittest.TestCase):
     """
 
     def setUp(self) -> None:
-        self.assembly_file = "tests/test_data/GCF_000001405.25_GRCh37.p13_assembly_report.txt"
         self.annotation_df = pd.read_csv(
             f"{TEST_DATA_DIR}/example_final_merged_df.csv")
         self.coordinates_df = pd.read_csv(
@@ -463,8 +475,7 @@ class TestWriteBed(unittest.TestCase):
         """
         args = argparse.Namespace(
             flanking=10,
-            assembly_summary=self.assembly_file,
-            genome_build="hg38",
+            genome_build="hg19",
             output_file_suffix="test"
         )
 
@@ -472,12 +483,12 @@ class TestWriteBed(unittest.TestCase):
         bed.write_bed(self.annotation_df, self.coordinates_df, args)
 
         # Check if the output files are created
-        assert os.path.exists("output_hg38_test.bed")
-        assert os.path.exists("output_hg38_test.maf")
+        assert os.path.exists("output_hg19_test.bed")
+        assert os.path.exists("output_hg19_test.maf")
 
         # Clean up - delete the generated files
-        os.remove("output_hg38_test.bed")
-        os.remove("output_hg38_test.maf")
+        os.remove("output_hg19_test.bed")
+        os.remove("output_hg19_test.maf")
 
     def test_write_bed_edge_cases(self):
         """
@@ -502,8 +513,7 @@ class TestWriteBed(unittest.TestCase):
         """
         args = argparse.Namespace(
             flanking=10,
-            assembly_summary=self.assembly_file,
-            genome_build="hg38",
+            genome_build="hg19",
             output_file_suffix="test"
         )
 
@@ -511,12 +521,12 @@ class TestWriteBed(unittest.TestCase):
         bed.write_bed(self.annotation_df, self.coordinates_df, args)
 
         # Check if the output files are created
-        assert os.path.exists("output_hg38_test.bed")
-        assert os.path.exists("output_hg38_test.maf")
+        assert os.path.exists("output_hg19_test.bed")
+        assert os.path.exists("output_hg19_test.maf")
 
         # Clean up - delete the generated files
-        os.remove("output_hg38_test.bed")
-        os.remove("output_hg38_test.maf")
+        os.remove("output_hg19_test.bed")
+        os.remove("output_hg19_test.maf")
 
     @pytest.fixture(autouse=True)
     def capsys(self, capsys):
@@ -540,8 +550,7 @@ class TestWriteBed(unittest.TestCase):
         # Create argparse.Namespace object with required arguments
         args = argparse.Namespace(
             flanking=100,
-            assembly_summary='tests/test_data/GCF_000001405.25_GRCh37.p13_assembly_report.txt',
-            genome_build='hg38',
+            genome_build='hg19',
             output_file_suffix='test'
         )
 
@@ -579,9 +588,9 @@ class TestSubtractAndReplace(unittest.TestCase):
         Test subtract_and_replace function with zero and negative integers.
         """
         assert bed.subtract_and_replace(
-            0, 5) == 1  # Minimum value is 1 when input is 0
+            0, 5) == 0  # Minimum value is 0 when input is 0
         # Minimum value is 1 when input is less than 5
-        assert bed.subtract_and_replace(3, 5) == 1
+        assert bed.subtract_and_replace(3, 5) == 0
 
     def test_subtract_and_replace_large_integers(self):
         """

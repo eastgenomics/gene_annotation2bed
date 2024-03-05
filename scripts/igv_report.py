@@ -8,7 +8,7 @@ import subprocess
 
 def create_igv_report(bed_file: str, maf_file: str,
                       genome: str, reference_file: str,
-                      info_columns: list, title: str,
+                      title: str,
                       output_file: str) -> None:
     """
     Create an IGV report from a bed file.
@@ -20,8 +20,6 @@ def create_igv_report(bed_file: str, maf_file: str,
         file path to maf file.
     genome : str
         genome name. i.e hg19.
-    info_columns : list
-        list of column names to be displayed in the report.
     title : str
         title of the report.
     output_file : str
@@ -61,14 +59,15 @@ def create_igv_report(bed_file: str, maf_file: str,
     # Writing to sample.json
     with open("tracks_config.json", "w") as outfile:
         outfile.write(tracks_json)
-    sort_result = subprocess.run(["sort", "-k1,1", "-k2,2n", "-k3,3n", bed_file])
+    bed_file_sorted = f"{bed_file}.sorted"
+    sort_result = subprocess.run(["sort", "-k1,1", "-k2,2n", "-k3,3n", bed_file, "-o", bed_file_sorted])
     print("Standard Output:", sort_result.stdout)
     print("Standard Error:", sort_result.stderr)
-    bgzip_result = subprocess.run(["bgzip", bed_file])
+    bgzip_result = subprocess.run(["bgzip", bed_file_sorted])
     print(bgzip_result.returncode)
     print("Standard Output:", bgzip_result.stdout)
     print("Standard Error:", bgzip_result.stderr)
-    index_result = subprocess.run(["tabix", f"{bed_file}.gz"])
+    index_result = subprocess.run(["tabix", "-p", "bed", f"{bed_file_sorted}.gz"])
     print(index_result.returncode)
     print("Standard Output:", index_result.stdout)
     print("Standard Error:", index_result.stderr)
@@ -85,7 +84,7 @@ def create_igv_report(bed_file: str, maf_file: str,
         "--track-config", "tracks_config.json",
         "--title", title,
         "--output", output_file,
-        # "--zero_based", "true" # add this flag if the bed file is zero based
+        "--zero_based", "true" # add this flag if the bed file is zero based
     ]
 
     result = subprocess.run(maf_based_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

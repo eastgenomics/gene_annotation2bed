@@ -4,6 +4,7 @@ import sys
 
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
+
 from utils import gff2pandas as gff2pd
 
 pd.set_option('display.max_rows', 50)
@@ -31,7 +32,7 @@ class Test_parsing_gff(unittest.TestCase):
         """
         self.assertIsInstance(self.gff_df, pd.DataFrame)
         self.assertIsInstance(self.gff_header, str)
-        self.assertEqual(self.gff_df.shape, (3, 9))
+        self.assertEqual(self.gff_df.shape, (3, 14))
         self.assertEqual(self.gff_df.columns.tolist(), [
             "seq_id",
             "source",
@@ -42,6 +43,11 @@ class Test_parsing_gff(unittest.TestCase):
             "strand",
             "phase",
             "attributes",
+            "Dbxref",
+            "ID",
+            "Name",
+            "gene",
+            "transcript_id"
         ])
         self.assertEqual(self.gff_df["seq_id"].tolist(), [
                          "NC_000001.10", "NC_000001.10", "NC_000001.10"])
@@ -153,9 +159,7 @@ class TestAttributesToColumns(unittest.TestCase):
         # Check if the resulting DataFrame has the expected columns
         expected_columns = ['seq_id', 'source', 'type', 'start', 'end',
                             'score', 'strand', 'phase', 'attributes',
-                            'Dbxref', 'ID', 'Name', 'Parent', 'description',
-                            'gbkey', 'gene', 'gene_biotype', 'gene_synonym',
-                            'product', 'pseudo', 'transcript_id']
+                            'Dbxref', 'ID', 'Name', 'gene', 'transcript_id']
         self.assertListEqual(
             self.gff_new_df.columns.tolist(), expected_columns)
 
@@ -165,44 +169,62 @@ class TestAttributesToColumns(unittest.TestCase):
         self.assertEqual(self.gff_new_df.loc[1, "ID"], "rna-NR_024540.1")
         self.assertEqual(self.gff_new_df.loc[1, "Name"], "NR_024540.1")
 
+
+class TestAttributesToColumnsEmpty(unittest.TestCase):
+    def setUp(self) -> None:
+        """
+        Set-up for the test cases.
+        """
+        self.gff_file = "tests/test_data/test_empty_attributes.gff"
+        self.gff = gff2pd.read_gff3(self.gff_file)
+        self.gff_df = self.gff.df
+        self.gff_header = self.gff.header
+        self.gff_new_df = self.gff.attributes_to_columns()
+        return super().setUp()
+
     def test_attributes_to_columns_empty_attributes(self):
-        # Test when attributes are empty
-        gff_file_empty_attr = "tests/test_data/test_empty_attributes.gff"
-        gff_empty_attr = gff2pd.read_gff3(gff_file_empty_attr)
-        gff_empty_attr_new_df = gff_empty_attr.attributes_to_columns()
         # Define the expected columns based on your GFF3 structure
         expected_columns = ["seq_id", "source", "type", "start", "end",
                             "score", "strand", "phase", "attributes"]
 
         # Check that the number of columns in the DataFrame matches the expected number
-        self.assertEqual(len(gff_empty_attr_new_df.columns),
+        self.assertEqual(len(self.gff_new_df.columns),
                          len(expected_columns))
 
         # Optionally, you can check if the column names match the expected ones
         self.assertListEqual(
-            gff_empty_attr_new_df.columns.tolist(), expected_columns)
+            self.gff_new_df.columns.tolist(), expected_columns)
+
+
+class TestAttributesToColumnsMissing(unittest.TestCase):
+    def setUp(self) -> None:
+        """
+        Set-up for the test cases.
+        """
+        self.gff_file = "tests/test_data/test_missing_attributes.gff"
+        self.gff = gff2pd.read_gff3(self.gff_file)
+        self.gff_df = self.gff.df
+        self.gff_header = self.gff.header
+        self.gff_new_df = self.gff.attributes_to_columns()
+        return super().setUp()
 
     def test_attributes_to_columns_missing_attributes(self):
-        # Test when attributes are missing in some rows
-        gff_file_missing_attr = "tests/test_data/test_missing_attributes.gff"
-        gff_missing_attr = gff2pd.read_gff3(gff_file_missing_attr)
-        gff_missing_attr_new_df = gff_missing_attr.attributes_to_columns()
 
         # Check if the resulting DataFrame has the expected columns
         expected_columns = ['seq_id', 'source', 'type', 'start', 'end', 'score',
                             'strand', 'phase', 'attributes', 'ID', 'Name', 'gene',
                             'transcript_id']
         self.assertListEqual(
-            gff_missing_attr_new_df.columns.tolist(), expected_columns)
+            self.gff_new_df.columns.tolist(), expected_columns)
 
         # Check if the values in the resulting DataFrame match the provided GFF3 data
-        self.assertEqual(gff_missing_attr_new_df.loc[0, "ID"], "gene-WASH7P")
-        self.assertEqual(gff_missing_attr_new_df.loc[0, "Name"], "WASH7P")
+        self.assertEqual(self.gff_new_df.loc[0, "ID"], "gene-WASH7P")
+        self.assertEqual(self.gff_new_df.loc[0, "Name"], "WASH7P")
         self.assertEqual(
-            gff_missing_attr_new_df.loc[1, "ID"], "rna-NR_024540.1")
-        self.assertEqual(gff_missing_attr_new_df.loc[1, "gene"], "WASH7P")
+            self.gff_new_df.loc[1, "ID"], "rna-NR_024540.1")
+        self.assertEqual(self.gff_new_df.loc[1, "gene"], "WASH7P")
         self.assertEqual(
-            gff_missing_attr_new_df.loc[1, "transcript_id"], "NR_024540.1")
+            self.gff_new_df.loc[1, "transcript_id"], "NR_024540.1")
 
 
 if __name__ == "__main__":

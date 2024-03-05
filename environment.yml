@@ -1,0 +1,54 @@
+name: myenvtest
+channels:
+  - bioconda
+  - r
+  - conda-forge
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=conda_forge
+  - _openmp_mutex=4.5=2_gnu
+  - bzip2=1.0.8=hd590300_5
+  - ca-certificates=2024.2.2=hbcca054_0
+  - ld_impl_linux-64=2.40=h41732ed_0
+  - libexpat=2.5.0=hcb278e6_1
+  - libffi=3.4.2=h7f98852_5
+  - libgcc-ng=13.2.0=h807b86a_5
+  - libgomp=13.2.0=h807b86a_5
+  - libnsl=2.0.1=hd590300_0
+  - libsqlite=3.45.1=h2797004_0
+  - libuuid=2.38.1=h0b41bf4_0
+  - libxcrypt=4.4.36=hd590300_1
+  - libzlib=1.2.13=hd590300_5
+  - ncurses=6.4=h59595ed_2
+  - openssl=3.2.1=hd590300_0
+  - pip=24.0=pyhd8ed1ab_0
+  - python=3.12.2=hab00c5b_0_cpython
+  - readline=8.2=h8228510_1
+  - setuptools=69.1.1=pyhd8ed1ab_0
+  - tk=8.6.13=noxft_h4845f30_101
+  - wheel=0.42.0=pyhd8ed1ab_0
+  - xz=5.2.6=h166bdaf_0
+  - pip:
+    - argcomplete==3.2.2
+    - certifi==2024.2.2
+    - charset-normalizer==3.3.2
+    - coverage==7.4.3
+    - idna==3.6
+    - igv-reports==1.12.0
+    - iniconfig==2.0.0
+    - intervaltree==3.1.0
+    - numpy==1.26.4
+    - packaging==23.2
+    - pandas==2.2.1
+    - pluggy==1.4.0
+    - pysam==0.22.0
+    - pytest==8.0.2
+    - pytest-cov==4.1.0
+    - python-dateutil==2.9.0
+    - pytz==2024.1
+    - requests==2.31.0
+    - six==1.16.0
+    - sortedcontainers==2.4.0
+    - tzdata==2024.1
+    - urllib3==2.2.1
+prefix: /home/rswilson1/anaconda3/envs/myenvtest

@@ -9,18 +9,22 @@
 
     Changes made:
     _split_atts function modified with try/except to handle AttributeError.
-    Line 64: dtype of start and end changed to np.uint32
+    Line 90: dtype of start and end changed to np.uint32
+    and others to category or string.
         dtype={
-        "seq_id": str,
+        "seq_id": category,
         "source": "category",
         "type": "category",
         "start": np.uint32,
         "end": np.uint32,
-        "score": str,
-        "strand": str,
-        "phase": str,
-        "attributes": str,
+        "score": category,
+        "strand": category,
+        "phase": category,
+        "attributes": string,
         }
+    Line 138: added a check for null values in the attributes column
+    if attribute_df["attributes"].isnull().any():
+            attribute_df["attributes"] = attribute_df["attributes"].fillna("")
 """
 
 import itertools
@@ -84,15 +88,15 @@ class Gff3DataFrame(object):
                 "attributes",
             ],
             dtype={
-                "seq_id": str,
+                "seq_id": "category",
                 "source": "category",
                 "type": "category",
                 "start": np.uint32,
                 "end": np.uint32,
-                "score": str,
-                "strand": str,
-                "phase": str,
-                "attributes": str,
+                "score": "category",
+                "strand": "category",
+                "phase": "category",
+                "attributes": "string",
             },
         )
         return self.df
@@ -127,7 +131,12 @@ class Gff3DataFrame(object):
         :rtype: pandas DataFrame
         """
         attribute_df = self.df.copy()
-        df_attributes = attribute_df.loc[:, "seq_id":"attributes"]
+        # remove unnecessary columns
+        unused_columns = ["phase", "score", "strand"]
+        attribute_df = attribute_df.drop(columns=unused_columns)
+
+        if attribute_df["attributes"].isnull().any():
+            attribute_df["attributes"] = attribute_df["attributes"].fillna("")
         attribute_df["at_dic"] = attribute_df.attributes.apply(_split_atts)
         attribute_df["at_dic_keys"] = attribute_df["at_dic"].apply(
             lambda at_dic: list(at_dic.keys())
@@ -135,12 +144,16 @@ class Gff3DataFrame(object):
         merged_attribute_list = list(
             itertools.chain.from_iterable(attribute_df["at_dic_keys"])
         )
+
         nonredundant_list = sorted(list(set(merged_attribute_list)))
         for atr in nonredundant_list:
-            df_attributes[atr] = attribute_df["at_dic"].apply(
+            list_cols = ["Dbxref", "transcript_id", "gene", "ID", "Name"]
+            if atr in list_cols:
+                self.df[atr] = attribute_df["at_dic"].apply(
                 lambda at_dic: at_dic.get(atr)
-            )
-        return df_attributes
+                )
+
+        return self.df
 
     def stats_dic(self) -> dict:
         """Gives the following statistics for the data:
