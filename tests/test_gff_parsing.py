@@ -4,6 +4,7 @@ import sys
 
 # set up the path to the module
 sys.path.append('../gene_annotation2bed')
+
 from utils import gff2pandas as gff2pd
 
 pd.set_option('display.max_rows', 50)
@@ -168,6 +169,7 @@ class TestAttributesToColumns(unittest.TestCase):
         self.assertEqual(self.gff_new_df.loc[1, "ID"], "rna-NR_024540.1")
         self.assertEqual(self.gff_new_df.loc[1, "Name"], "NR_024540.1")
 
+
 class TestAttributesToColumnsEmpty(unittest.TestCase):
     def setUp(self) -> None:
         """
@@ -192,6 +194,7 @@ class TestAttributesToColumnsEmpty(unittest.TestCase):
         # Optionally, you can check if the column names match the expected ones
         self.assertListEqual(
             self.gff_new_df.columns.tolist(), expected_columns)
+
 
 class TestAttributesToColumnsMissing(unittest.TestCase):
     def setUp(self) -> None:

@@ -587,7 +587,8 @@ class TestSubtractAndReplace(unittest.TestCase):
         """
         Test subtract_and_replace function with zero and negative integers.
         """
-        assert bed.subtract_and_replace(0, 5) == 0  # Minimum value is 0 when input is 0
+        assert bed.subtract_and_replace(
+            0, 5) == 0  # Minimum value is 0 when input is 0
         # Minimum value is 1 when input is less than 5
         assert bed.subtract_and_replace(3, 5) == 0
 
