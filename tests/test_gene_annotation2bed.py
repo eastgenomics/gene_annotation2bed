@@ -69,7 +69,7 @@ class TestParseGFF(unittest.TestCase):
                            'strand': 'category', 'phase': 'category',
                            'attributes': 'string',
                            'Dbxref': 'object', 'transcript_id': 'category',
-                           'hgnc_id': 'Int32'}
+                           'hgnc_id': 'uint16'}
 
         for col, dtype in expected_dtypes.items():
             self.assertEqual(self.test_df[col].dtype.name, dtype)
@@ -185,13 +185,14 @@ class TestConvertCoordinates(unittest.TestCase):
             "start": [11874, 20000],
             "end": [14409, 25000],
             "annotation": ["promoter_of_interest", "enhancer"],
-            "gene": ["", ""]
+            "gene": [None, None]
         }
         expected_df = pd.DataFrame(expected_data)
         expected_df = expected_df.astype({'chromosome': 'category',
                                           'start': np.uint32,
                                           'end': np.uint32,
-                                          'annotation': 'category'})
+                                          'annotation': 'category',
+                                          'gene': 'category'})
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_convert_coordinates_empty(self):
@@ -218,13 +219,14 @@ class TestConvertCoordinates(unittest.TestCase):
             "start": [11874, 20000],
             "end": [14409, 25000],
             "annotation": ["promoter_of_interest", "enhancer"],
-            "gene": ["", ""]
+            "gene": [None, None]
         }
         expected_df = pd.DataFrame(expected_data)
         expected_df = expected_df.astype({'chromosome': 'category',
                                           'start': np.uint32,
                                           'end': np.uint32,
-                                          'annotation': 'category'})
+                                          'annotation': 'category',
+                                          'gene': 'category'})
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -243,13 +245,14 @@ class TestConvertCoordinates(unittest.TestCase):
             "start": [11874, 20000],
             "end": [14409, 25000],
             "annotation": ["promoter_of_interest", "enhancer"],
-            "gene": ["", ""]
+            "gene": [None, None]
         }
         expected_df = pd.DataFrame(expected_data)
         expected_df = expected_df.astype({'chromosome': 'category',
                                           'start': np.uint32,
                                           'end': np.uint32,
-                                          'annotation': 'category'})
+                                          'annotation': 'category',
+                                          'gene': 'category'})
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -268,13 +271,14 @@ class TestConvertCoordinates(unittest.TestCase):
             "start": [999999999],
             "end": [1000000000],
             "annotation": ["large_region"],
-            "gene": [""]
+            "gene": [None]
         }
         expected_df = pd.DataFrame(expected_data)
         expected_df = expected_df.astype({'chromosome': 'category',
                                           'start': np.uint32,
                                           'end': np.uint32,
-                                          'annotation': 'category'})
+                                          'annotation': 'category',
+                                          'gene': 'category'})
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -433,12 +437,13 @@ class TestMerge_Dataframes(unittest.TestCase):
             'start': [5000000, 5000, 5000, 1, 1],
             'end': [248956422, 10000, 10000, 100000, 100000],
             'annotation': ['Non-Oncogene', 'Oncogene', 'Oncogene', 'Non-Oncogene', 'Oncogene'],
-            'gene': ['', '', '', '', '']
+            'gene': [None, None, None, None, None]
         }
         expected_df = pd.DataFrame(expected_data)
         expected_df = expected_df.astype({
             'start': np.uint32, 'end': np.uint32,
-            'chromosome': "category", 'annotation': "category"
+            'chromosome': "category", 'annotation': "category",
+            'gene': "category"
         })
 
         pd.testing.assert_frame_equal(coordinates_df, expected_df)

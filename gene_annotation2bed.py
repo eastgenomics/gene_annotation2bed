@@ -193,8 +193,8 @@ def parse_gff(gff_file):
     dtype_mapping = {
         "ID": "category",
         "transcript_id": "category",
-        "hgnc_id": "Int32",
-    }
+        "hgnc_id": np.uint16
+        }
 
     gff_df = gff_df.astype(dtype_mapping)
     # Filter GFF DataFrame to select entries with 'NM' type
@@ -277,7 +277,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
     coordinates_df['chromosome'] = pd.Series(dtype='category')
     coordinates_df['start'] = pd.Series(dtype=np.uint32)
     coordinates_df['end'] = pd.Series(dtype=np.uint32)
-    coordinates_df['gene'] = ""
+    coordinates_df['gene'] = pd.Series(dtype='category')
     try:
         # Split the "Coordinates" column by ':' and '-'
         coordinates_df[["chromosome", "start", "end"]] = coordinates_df[
@@ -302,6 +302,7 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         coordinates_df["annotation"] = coordinates_df["annotation"].astype(
             'category'
             )
+        coordinates_df["gene"] = coordinates_df["gene"].astype('category')
     except ValueError as e:
         raise ValueError(
             f"Error: {e}, please check the format of the coordinates in the annotation file.")
