@@ -32,7 +32,6 @@ class Test_parsing_gff(unittest.TestCase):
         self.assertIsInstance(self.gff_df, pd.DataFrame)
         self.assertIsInstance(self.gff_header, str)
         self.assertEqual(self.gff_df.shape, (3, 14))
-        print(self.gff_df.head())
         self.assertEqual(self.gff_df.columns.tolist(), [
             "seq_id",
             "source",
