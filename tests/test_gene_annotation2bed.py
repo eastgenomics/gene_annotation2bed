@@ -14,6 +14,7 @@ import sys
 
 import argparse
 import unittest
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -47,7 +48,7 @@ class TestParseGFF(unittest.TestCase):
         expected_columns = ['seq_id', 'source', 'type', 'start',
                             'end', 'score', 'strand', 'phase',
                             'attributes', 'Dbxref', 'ID',
-                            'gbkey', 'gene', 'transcript_id', 'hgnc_id']
+                            'gene', 'transcript_id', 'hgnc_id']
         self.assertListEqual(list(self.test_df.columns), expected_columns)
 
     def test_parse_gff_startswith_NM(self):
@@ -62,17 +63,16 @@ class TestParseGFF(unittest.TestCase):
 
     def test_parse_gff_dtypes(self):
         # Test if the data types are set as expected
-        expected_dtypes = {'seq_id': 'object', 'source': 'category',
+        expected_dtypes = {'seq_id': 'category', 'source': 'category',
                            'type': 'category', 'start': 'uint32',
-                           'end': 'uint32', 'score': 'object',
-                           'strand': 'object', 'phase': 'object',
-                           'attributes': 'object',
-                           'Dbxref': 'object', 'ID': 'category',
-                           'gbkey': 'object', 'gene': 'object',
-                           'transcript_id': 'object',
-                           'hgnc_id': 'Int64'}
+                           'end': 'uint32', 'score': 'category',
+                           'strand': 'category', 'phase': 'category',
+                           'attributes': 'string',
+                           'Dbxref': 'object', 'transcript_id': 'category',
+                           'hgnc_id': 'Int32'}
 
         for col, dtype in expected_dtypes.items():
+            print(col, dtype, self.test_df[col].dtype.name)
             self.assertEqual(self.test_df[col].dtype.name, dtype)
 
     def test_parse_gff_extract_hgnc_id(self):
@@ -180,7 +180,7 @@ class TestConvertCoordinates(unittest.TestCase):
         }
         input_df = pd.DataFrame(input_data)
         result_df = bed.convert_coordinates(input_df)
-        print(result_df)
+
         expected_data = {
             "chromosome": ["1", "2"],
             "start": [11874, 20000],
@@ -189,7 +189,10 @@ class TestConvertCoordinates(unittest.TestCase):
             "gene": ["", ""]
         }
         expected_df = pd.DataFrame(expected_data)
-        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+        expected_df = expected_df.astype({'chromosome': 'category',
+                                          'start': np.uint32,
+                                          'end': np.uint32,
+                                          'annotation': 'category'})
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_convert_coordinates_empty(self):
@@ -219,7 +222,10 @@ class TestConvertCoordinates(unittest.TestCase):
             "gene": ["", ""]
         }
         expected_df = pd.DataFrame(expected_data)
-        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+        expected_df = expected_df.astype({'chromosome': 'category',
+                                          'start': np.uint32,
+                                          'end': np.uint32,
+                                          'annotation': 'category'})
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -241,7 +247,10 @@ class TestConvertCoordinates(unittest.TestCase):
             "gene": ["", ""]
         }
         expected_df = pd.DataFrame(expected_data)
-        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+        expected_df = expected_df.astype({'chromosome': 'category',
+                                          'start': np.uint32,
+                                          'end': np.uint32,
+                                          'annotation': 'category'})
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -263,7 +272,10 @@ class TestConvertCoordinates(unittest.TestCase):
             "gene": [""]
         }
         expected_df = pd.DataFrame(expected_data)
-        expected_df = expected_df.astype({'start': "Int64", 'end': "Int64"})
+        expected_df = expected_df.astype({'chromosome': 'category',
+                                          'start': np.uint32,
+                                          'end': np.uint32,
+                                          'annotation': 'category'})
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -426,8 +438,8 @@ class TestMerge_Dataframes(unittest.TestCase):
         }
         expected_df = pd.DataFrame(expected_data)
         expected_df = expected_df.astype({
-            'start': "Int64", 'end': "Int64",
-            'chromosome': "str", 'annotation': "str"
+            'start': np.uint32, 'end': np.uint32,
+            'chromosome': "category", 'annotation': "category"
         })
 
         pd.testing.assert_frame_equal(coordinates_df, expected_df)

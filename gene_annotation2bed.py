@@ -193,15 +193,15 @@ def parse_gff(gff_file):
     dtype_mapping = {
         "ID": "category",
         "transcript_id": "category",
-        "hgnc_id": "Int64",
+        "hgnc_id": "Int32",
     }
 
     gff_df = gff_df.astype(dtype_mapping)
     # Filter GFF DataFrame to select entries with 'NM' type
     print("Filtering GFF DataFrame to select entries with 'NM' type")
     print(gff_df.head())
-    # print only include entries with 'NM' prefix
-    print(gff_df["transcript_id"].str.startswith("NM_"))
+    print(gff_df.dtypes)
+
     # remove null values from the transcript_id column
     gff_df = gff_df.dropna(subset=["transcript_id"])
     transcripts_df = gff_df[gff_df["transcript_id"].str.startswith("NM_")]
@@ -276,9 +276,9 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
         return empty_df
 
     # Create empty columns
-    coordinates_df['chromosome'] = pd.Series(dtype='str')
-    coordinates_df['start'] = pd.Series(dtype='Int64')
-    coordinates_df['end'] = pd.Series(dtype='Int64')
+    coordinates_df['chromosome'] = pd.Series(dtype='category')
+    coordinates_df['start'] = pd.Series(dtype=np.uint32)
+    coordinates_df['end'] = pd.Series(dtype=np.uint32)
     coordinates_df['gene'] = ""
     try:
         # Split the "Coordinates" column by ':' and '-'
@@ -297,11 +297,13 @@ def convert_coordinates(coordinates_df: pd.DataFrame) -> pd.DataFrame:
 
     try:
         coordinates_df["chromosome"] = coordinates_df["chromosome"].astype(
-            'category')
-        coordinates_df["start"] = coordinates_df["start"].astype('Int64')
-        coordinates_df["end"] = coordinates_df["end"].astype('Int64')
+            'category'
+            )
+        coordinates_df["start"] = coordinates_df["start"].astype(np.uint32)
+        coordinates_df["end"] = coordinates_df["end"].astype(np.uint32)
         coordinates_df["annotation"] = coordinates_df["annotation"].astype(
-            'str')
+            'category'
+            )
     except ValueError as e:
         raise ValueError(
             f"Error: {e}, please check the format of the coordinates in the annotation file.")
@@ -367,9 +369,9 @@ def parse_annotation_tsv(path: str, gff_transcripts_df: pd.DataFrame):
     transcript_df = df[transcript_mask]
     coordinates_df = df[coordinates_mask]
 
-    dtype_mapping_hgnc = {"ID": "Int64", "annotation": "category"}
+    dtype_mapping_hgnc = {"ID": "Int32", "annotation": "category"}
     dtype_mapping_transcript = {"ID": "str", "annotation": "category"}
-    dtype_mapping_gff = {"hgnc_id": np.int16}
+    dtype_mapping_gff = {"hgnc_id": "Int32"}
 
     hgnc_df = hgnc_df.astype(dtype_mapping_hgnc)
     transcript_df = transcript_df.astype(dtype_mapping_transcript)
@@ -824,7 +826,7 @@ def write_bed(annotation_df: pd.DataFrame,
         "seq_id": "category",
         "start_flank": np.uint32,
         "end_flank": np.uint32,
-        "hgnc_id": np.int16,
+        "hgnc_id": "Int32",
         "annotation": "category",
         "gene": "category"
     })
