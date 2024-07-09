@@ -392,6 +392,18 @@ def parse_annotation_tsv(path: str,
             corrected_gene_symbols = convert_symbols_to_hgnc_ids(
                 gene_symbol_df, hgnc_dump
             )
+            #Check for invalid gene symbols
+            invalid_symbols = corrected_gene_symbols[
+                corrected_gene_symbols['hgnc_id'].isnull()
+            ]
+            if not invalid_symbols.empty:
+                print(
+                    f"Invalid gene symbols found in the annotation file: \n {invalid_symbols}"
+                )
+            # Remove invalid gene symbols
+            corrected_gene_symbols = corrected_gene_symbols[
+                corrected_gene_symbols['hgnc_id'].notnull()
+            ]
             gene_symbol_df_corrected = corrected_gene_symbols[
                 ['hgnc_id', 'annotation']
             ].copy()
