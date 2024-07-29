@@ -848,6 +848,15 @@ def write_bed(annotation_df: pd.DataFrame,
     )
     # Merge overlapping entries
     collapsed_df = merge_overlapping(joint_bed_df)
+    # removing unknown contigs and raise in terminal
+    filtered_collapsed_df = collapsed_df[~collapsed_df["chromosome"].str.startswith('Unknown')]
+
+    # Print all unknown contigs
+    print("Unknown contigs in the BED file:")
+    unknown_contigs = collapsed_df[collapsed_df["chromosome"].str.startswith('Unknown')]
+    for contig in unknown_contigs["chromosome"].unique():
+        print(contig)
+    print(f"Total unknown contig rows: {len(unknown_contigs)}")
     # Write the collapsed data to an output file
     output_file_name_maf = (
         f"output_{args.genome_build}_{args.output_file_suffix}.maf"
@@ -855,10 +864,10 @@ def write_bed(annotation_df: pd.DataFrame,
     output_file_name_bed = (
         f"output_{args.genome_build}_{args.output_file_suffix}.bed"
     )
-    collapsed_df.to_csv(output_file_name_maf, sep="\t",
-                        header=True, index=False)
-    collapsed_df.to_csv(output_file_name_bed, sep="\t",
-                        header=False, index=False)
+    filtered_collapsed_df.to_csv(output_file_name_maf, sep="\t",
+                                 header=True, index=False)
+    filtered_collapsed_df.to_csv(output_file_name_bed, sep="\t",
+                                 header=False, index=False)
 
 
 def main():
