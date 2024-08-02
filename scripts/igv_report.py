@@ -49,7 +49,7 @@ def create_igv_report(bed_file: str, maf_file: str,
         {
             "name": 'BED',
             "type": '',
-            "url": f'{bed_file}.gz',
+            "url": f'{bed_file}.sorted.gz',
             "indexURL": f'{bed_file}.gz.tbi'
         },
     ]
